@@ -1,0 +1,19 @@
+import mongoose from 'mongoose';
+
+const reviewSchema = new mongoose.Schema(
+  {
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, required: true, maxlength: 1000 },
+    images: [{ type: String }], // Array of base64 image data
+    verified: { type: Boolean, default: true }, // Verified purchase
+  },
+  { timestamps: true }
+);
+
+reviewSchema.index({ productId: 1, createdAt: -1 });
+reviewSchema.index({ userId: 1, productId: 1, orderId: 1 }, { unique: true }); // One review per product per order
+
+export default mongoose.model('Review', reviewSchema);

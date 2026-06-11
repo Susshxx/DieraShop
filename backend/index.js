@@ -1,0 +1,139 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
+import mongoose from 'mongoose';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+
+import authRoutes from './routes/auth.js';
+import productRoutes from './routes/products.js';
+import categoryRoutes from './routes/categories.js';
+import searchRoutes from './routes/search.js';
+import siteImageRoutes, { adminRouter as adminSiteImages } from './routes/siteImages.js';
+import orderRoutes, { adminRouter as adminOrders } from './routes/orders.js';
+import questionRoutes, { adminRouter as adminQuestions } from './routes/questions.js';
+import chatRoutes, { adminRouter as adminChat } from './routes/chat.js';
+import notificationRoutes from './routes/notifications.js';
+import userRoutes, { adminRouter as adminUsers } from './routes/users.js';
+import statsRoutes from './routes/stats.js';
+import faqRoutes from './routes/faqs.js';
+import reviewRoutes from './routes/reviews.js';
+import { verifyTokenString } from './utils/jwt.js';
+import { isEmailEnabled } from './utils/email.js';
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true },
+});
+
+app.set('io', io);
+
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+  })
+);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(passport.initialize());
+
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/site-images', siteImageRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/faqs', faqRoutes);
+app.use('/api/reviews', reviewRoutes);
+
+app.use('/api/admin/site-images', adminSiteImages);
+app.use('/api/admin/orders', adminOrders);
+app.use('/api/admin/questions', adminQuestions);
+app.use('/api/admin/chat', adminChat);
+app.use('/api/admin/users', adminUsers);
+app.use('/api/admin/stats', statsRoutes);
+
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
+io.on('connection', (socket) => {
+  const token = socket.handshake.auth?.token;
+  if (token) {
+    try {
+      const user = verifyTokenString(token);
+      socket.join(`user:${user.id}`);
+      socket.data.user = user;
+    } catch {
+      /* guest */
+    }
+  }
+
+  socket.on('join_conversation', (conversationId) => {
+    socket.join(`conversation:${conversationId}`);
+  });
+
+  socket.on('leave_conversation', (conversationId) => {
+    socket.leave(`conversation:${conversationId}`);
+  });
+
+  socket.on('disconnect', () => {});
+});
+
+const PORT = process.env.PORT || 5000;
+
+const shutdown = (signal) => {
+  console.log(`${signal} received — closing server…`);
+  httpServer.close(() => {
+    mongoose.connection.close(false).then(() => process.exit(0));
+  });
+  setTimeout(() => process.exit(1), 5000).unref();
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+mongoose
+  .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dierashop', {
+    dbName: 'dierashop',
+  })
+  .then(() => {
+    console.log('MongoDB connected');
+    httpServer.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Stop the other process or set PORT to a different value in backend/.env`);
+        console.error(`Windows: netstat -ano | findstr :${PORT}  then  taskkill /PID <pid> /F`);
+      } else {
+        console.error('Server error:', err.message);
+      }
+      process.exit(1);
+    });
+    httpServer.listen(PORT, () => {
+      console.log(`Diera Shop API on :${PORT}`);
+      console.log('\n📧 EMAIL CONFIGURATION:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`Provider: ${process.env.EMAIL_PROVIDER || 'NOT SET'}`);
+      console.log(`Service ID: ${process.env.EMAILJS_SERVICE_ID ? '✓ SET' : '✗ NOT SET'}`);
+      console.log(`Template ID: ${process.env.EMAILJS_TEMPLATE_ID ? '✓ SET' : '✗ NOT SET'}`);
+      console.log(`Public Key: ${process.env.EMAILJS_PUBLIC_KEY ? '✓ SET' : '✗ NOT SET'}`);
+      console.log(`Private Key: ${process.env.EMAILJS_PRIVATE_KEY ? '✓ SET (optional)' : '✗ NOT SET (optional)'}`);
+      console.log(`Status: ${isEmailEnabled() ? '✅ EmailJS ENABLED - Emails will be sent' : '⚠️  CONSOLE MODE - OTP codes print in terminal'}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    });
+  })
+  .catch((err) => {
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
+  });
