@@ -72,7 +72,8 @@ const ProductDetail = () => {
       productId: p.id, 
       name: p.name, 
       price: Number(p.price_npr ?? p.price), 
-      image: mainImg, 
+      image: mainImg,
+      category: p.category_name || p.categoryName,
       size, 
       color: selectedColor,
       quantity: 1 
@@ -95,7 +96,8 @@ const ProductDetail = () => {
       productId: p.id, 
       name: p.name, 
       price: Number(p.price_npr ?? p.price), 
-      image: mainImg, 
+      image: mainImg,
+      category: p.category_name || p.categoryName,
       size, 
       color: selectedColor,
       quantity: 1 

@@ -96,11 +96,22 @@ const AdminOrders = () => {
                 </div>
               </div>
             </div>
-            <div className="mt-3 text-sm">
+            <div className="mt-3 text-sm space-y-2">
               {o.order_items?.map((it: any) => (
-                <div key={it.id || it.product_name} className="flex justify-between text-muted-foreground">
-                  <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
-                  <span>{formatNPR(it.price_npr * it.qty)}</span>
+                <div key={it.id || it.product_name} className="flex items-center gap-3">
+                  {it.product_image && (
+                    <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
+                      <img
+                        src={it.product_image}
+                        alt={it.product_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-between flex-1 text-muted-foreground">
+                    <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
+                    <span>{formatNPR(it.price_npr * it.qty)}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -177,45 +188,85 @@ const AdminOrders = () => {
               </div>
 
               <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2">Customer Information</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Name:</span> {viewOrder.full_name}</p>
-                  <p><span className="font-medium">Phone:</span> {viewOrder.phone}</p>
+                <h3 className="font-semibold mb-3">Customer Information</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-foreground min-w-[70px]">Name:</span>
+                    <span className="font-semibold text-foreground">{viewOrder.full_name}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-foreground min-w-[70px]">Phone:</span>
+                    <span className="font-semibold text-foreground">{viewOrder.phone}</span>
+                  </div>
                   {viewOrder.profiles?.email && (
-                    <p><span className="font-medium">Email:</span> {viewOrder.profiles.email}</p>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-foreground min-w-[70px]">Email:</span>
+                      <span className="font-semibold text-foreground">{viewOrder.profiles.email}</span>
+                    </div>
                   )}
-                  <p><span className="font-medium">Address:</span> {viewOrder.shipping_address}</p>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-foreground min-w-[70px]">Address:</span>
+                    <span className="font-semibold text-foreground">{viewOrder.shipping_address}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2">Payment Information</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Method:</span> {viewOrder.payment_method?.toUpperCase()}</p>
+                <h3 className="font-semibold mb-3">Payment Information</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-foreground min-w-[130px]">Method:</span>
+                    <span className="font-semibold text-foreground">{viewOrder.payment_method?.toUpperCase()}</span>
+                  </div>
                   {viewOrder.paymentDetails?.transactionId && (
-                    <p><span className="font-medium">Transaction ID:</span> {viewOrder.paymentDetails.transactionId}</p>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-foreground min-w-[130px]">Transaction ID:</span>
+                      <span className="font-mono text-sm">{viewOrder.paymentDetails.transactionId}</span>
+                    </div>
                   )}
                   {viewOrder.paymentDetails?.status && (
-                    <p><span className="font-medium">Payment Status:</span> {viewOrder.paymentDetails.status}</p>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-foreground min-w-[130px]">Payment Status:</span>
+                      <span className="font-semibold text-foreground capitalize">{viewOrder.paymentDetails.status}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
               <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2">Order Items</h3>
+                <h3 className="font-semibold mb-3">Order Items</h3>
                 <div className="space-y-3">
                   {viewOrder.order_items?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-start border-b pb-2">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product_name}</p>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          {item.size && <p>Size: {item.size}</p>}
-                          {item.color && <p>Color: {item.color}</p>}
-                          <p>Quantity: {item.qty}</p>
-                          <p>Price: {formatNPR(item.price_npr)} each</p>
+                    <div key={idx} className="flex gap-4 items-start pb-3 border-b last:border-b-0 last:pb-0">
+                      {/* Product Image */}
+                      {item.product_image && (
+                        <div className="flex-shrink-0 w-20 h-20 rounded-md overflow-hidden bg-muted">
+                          <img
+                            src={item.product_image}
+                            alt={item.product_name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-base">{item.product_name}</p>
+                        {item.category_name && (
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{item.category_name}</p>
+                        )}
+                        <div className="text-sm text-muted-foreground space-y-1 mt-1.5">
+                          {item.size && <p>Size: <span className="font-medium">{item.size}</span></p>}
+                          {item.color && <p>Color: <span className="font-medium">{item.color}</span></p>}
+                          <p>Quantity: <span className="font-medium">{item.qty}</span></p>
+                          <p>Price: <span className="font-medium">{formatNPR(item.price_npr)}</span> each</p>
                         </div>
                       </div>
-                      <p className="font-semibold">{formatNPR(item.price_npr * item.qty)}</p>
+                      
+                      {/* Item Total */}
+                      <div className="flex-shrink-0 text-right">
+                        <p className="font-bold text-base">{formatNPR(item.price_npr * item.qty)}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -44,6 +44,8 @@ const Checkout = () => {
         items: items.map((i) => ({
           productId: i.productId,
           productName: i.name,
+          image: i.image,
+          categoryName: i.category,
           priceNPR: i.price,
           qty: i.quantity,
           size: i.size || null,

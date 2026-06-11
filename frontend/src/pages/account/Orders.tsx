@@ -154,23 +154,34 @@ const Orders = () => {
               )}
             </div>
           </div>
-          <div className="mt-3 text-sm">
+          <div className="mt-3 text-sm space-y-2">
             {o.order_items?.map((it: any) => (
-              <div key={it.id || it.product_name} className="flex justify-between items-center text-muted-foreground">
-                <div className="flex-1">
-                  <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
-                  {o.status === 'delivered' && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => openReviewDialog(it.product_id, o.id, it.product_name)}
-                      className="ml-2 h-auto p-0 text-xs text-primary"
-                    >
-                      Review
-                    </Button>
-                  )}
+              <div key={it.id || it.product_name} className="flex items-center gap-3">
+                {it.product_image && (
+                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
+                    <img
+                      src={it.product_image}
+                      alt={it.product_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex justify-between items-center flex-1 text-muted-foreground">
+                  <div className="flex-1">
+                    <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
+                    {o.status === 'delivered' && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => openReviewDialog(it.product_id, o.id, it.product_name)}
+                        className="ml-2 h-auto p-0 text-xs text-primary"
+                      >
+                        Review
+                      </Button>
+                    )}
+                  </div>
+                  <span className="ml-2">{formatNPR(it.price_npr * it.qty)}</span>
                 </div>
-                <span>{formatNPR(it.price_npr * it.qty)}</span>
               </div>
             ))}
           </div>

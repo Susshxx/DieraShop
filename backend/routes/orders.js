@@ -30,6 +30,8 @@ const mapOrder = (o) => ({
     id: i._id,
     product_id: i.productId,
     product_name: i.productName,
+    product_image: i.productImage,
+    category_name: i.categoryName,
     qty: i.qty,
     size: i.size,
     color: i.color,
@@ -54,6 +56,8 @@ router.post('/create', verifyToken, async (req, res) => {
       items: items.map((i) => ({
         productId: i.productId || i.product_id,
         productName: i.productName || i.product_name || i.name,
+        productImage: i.image || i.productImage,
+        categoryName: i.categoryName || i.category_name || i.category,
         qty: i.qty || i.quantity,
         size: i.size,
         color: i.color,
