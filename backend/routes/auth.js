@@ -79,10 +79,22 @@ router.get('/google/callback', (req, res, next) => {
     } catch {
       /* use default */
     }
-    const url = new URL(`${process.env.FRONTEND_URL}/auth/callback`);
-    url.searchParams.set('token', token);
-    url.searchParams.set('redirect', afterLogin);
-    res.redirect(url.toString());
+    
+    // Set token as secure HTTP-only cookie
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined,
+    };
+    
+    res.cookie('auth_token', token, cookieOptions);
+    res.cookie('auth_redirect', afterLogin, { ...cookieOptions, httpOnly: false });
+    
+    // Redirect to frontend callback page (no token in URL)
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?status=success`);
   });
 
 router.post('/send-otp', async (req, res) => {
@@ -240,7 +252,44 @@ router.get('/me', verifyToken, async (req, res) => {
   });
 });
 
+// New endpoint to get auth from cookie (for Google OAuth)
+router.get('/cookie-auth', async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+    if (!token) {
+      return res.status(401).json({ error: 'No auth cookie found' });
+    }
+    
+    // Verify the token
+    const { verifyToken: verifyTokenFn } = await import('../utils/jwt.js');
+    const decoded = verifyTokenFn(token);
+    
+    const user = await User.findById(decoded.id).select('-passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        address: user.address,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Cookie auth error:', error);
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
 router.post('/logout', (_req, res) => {
+  res.clearCookie('auth_token');
+  res.clearCookie('auth_redirect');
   res.json({ ok: true });
 });
 
