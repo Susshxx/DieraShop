@@ -112,7 +112,7 @@ const Index = () => {
                 defaultSrc={heroDefault}
                 alt="Featured collection"
                 className="block"
-                imgClassName="w-full h-[55vh] object-cover"
+                imgClassName="w-full h-[35vh] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center px-6 text-center">
                 <h3 className="text-white text-2xl mb-3 italic" style={{ fontFamily: 'Playball, cursive' }}>
