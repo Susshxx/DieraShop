@@ -151,46 +151,46 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <DieraHeader />
       <main className="flex-1">
-        <div className="grid lg:grid-cols-2 gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 max-w-5xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-3 max-w-5xl mx-auto">
           <div>
             <div className="aspect-square bg-muted rounded overflow-hidden">
               {mainImg && <img src={mainImg} alt={p.name} className="w-full h-full object-cover" />}
             </div>
             {p.images?.length > 1 && (
-              <div className="flex gap-1.5 mt-1.5 overflow-x-auto">
+              <div className="flex gap-1 mt-1 overflow-x-auto">
                 {p.images.map((img: string, i: number) => (
-                  <button key={i} onClick={() => setMainImg(img)} className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded overflow-hidden border-2 ${mainImg === img ? "border-primary" : "border-transparent"}`}>
+                  <button key={i} onClick={() => setMainImg(img)} className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded overflow-hidden border-2 ${mainImg === img ? "border-primary" : "border-transparent"}`}>
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <div className="space-y-2">
-            <Link to={`/category/all`} className="text-xs text-muted-foreground uppercase tracking-wide">Diera Shop</Link>
-            <h1 className="text-xl sm:text-2xl font-normal italic">{p.name}</h1>
-            <p className="text-lg sm:text-xl">{formatNPR(p.price_npr ?? p.price)}</p>
-            <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{p.description}</p>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Link to={`/category/all`} className="text-[9px] sm:text-xs text-muted-foreground uppercase tracking-wide">Diera Shop</Link>
+            <h1 className="text-lg sm:text-xl font-normal italic leading-tight">{p.name}</h1>
+            <p className="text-base sm:text-lg">{formatNPR(p.price_npr ?? p.price)}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-pre-line leading-snug">{p.description}</p>
 
             {p.sizes?.length > 0 && (
-              <div className="pt-1">
-                <p className="text-xs mb-1.5 italic">Size</p>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="pt-0.5 sm:pt-1">
+                <p className="text-[10px] sm:text-xs mb-1 italic">Size</p>
+                <div className="flex flex-wrap gap-1">
                   {p.sizes.map((s: string) => (
-                    <button key={s} onClick={() => setSize(s)} className={`px-3 py-1.5 text-xs border rounded ${size === s ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{s}</button>
+                    <button key={s} onClick={() => setSize(s)} className={`px-2.5 py-1 text-[10px] sm:text-xs border rounded ${size === s ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{s}</button>
                   ))}
                 </div>
               </div>
             )}
             {p.colors?.length > 0 && (
-              <div className="pt-1">
-                <p className="text-xs mb-1.5 italic">Color</p>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="pt-0.5 sm:pt-1">
+                <p className="text-[10px] sm:text-xs mb-1 italic">Color</p>
+                <div className="flex flex-wrap gap-1">
                   {p.colors.map((color: string) => (
                     <button 
                       key={color} 
                       onClick={() => handleColorSelect(color)} 
-                      className={`px-3 py-1.5 text-xs border rounded transition-all ${selectedColor === color ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:border-primary/50"}`}
+                      className={`px-2.5 py-1 text-[10px] sm:text-xs border rounded transition-all ${selectedColor === color ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:border-primary/50"}`}
                     >
                       {color}
                     </button>
@@ -200,11 +200,11 @@ const ProductDetail = () => {
             )}
 
             {role !== "admin" && (
-              <div className="pt-2">
+              <div className="pt-1.5 sm:pt-2">
                 {variantStock <= 0 ? (
                   <Button 
                     variant="destructive"
-                    className="w-full h-9 text-xs"
+                    className="w-full h-8 sm:h-9 text-[11px] sm:text-xs"
                     disabled
                   >
                     Out of stock
@@ -214,13 +214,13 @@ const ProductDetail = () => {
                     <Button 
                       onClick={addToCart} 
                       variant="outline"
-                      className="flex-1 h-9 text-xs"
+                      className="flex-1 h-8 sm:h-9 text-[11px] sm:text-xs"
                     >
                       Add to bag
                     </Button>
                     <Button 
                       onClick={buyNow} 
-                      className="flex-1 h-9 text-xs"
+                      className="flex-1 h-8 sm:h-9 text-[11px] sm:text-xs"
                     >
                       Buy now
                     </Button>
@@ -230,12 +230,12 @@ const ProductDetail = () => {
             )}
             
             {role === "admin" && (
-              <p className="text-xs text-muted-foreground italic pt-2">
+              <p className="text-[10px] sm:text-xs text-muted-foreground italic pt-1.5 sm:pt-2">
                 Admins cannot purchase items
               </p>
             )}
 
-            <p className="text-xs text-muted-foreground italic pt-1">
+            <p className="text-[10px] sm:text-xs text-muted-foreground italic pt-0.5 sm:pt-1">
               {size && selectedColor ? (
                 <>{variantStock} in stock for {size} - {selectedColor}</>
               ) : (
@@ -244,7 +244,7 @@ const ProductDetail = () => {
             </p>
           </div>
         </div>
-        <div className="grid lg:grid-cols-2 gap-4 px-3 sm:px-4 pb-4 max-w-5xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-3 px-2 sm:px-3 pb-3 sm:pb-4 max-w-5xl mx-auto">
           <ProductQA productId={p.id} />
           <ProductReviews productId={p.id} />
         </div>

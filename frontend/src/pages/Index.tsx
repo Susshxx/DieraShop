@@ -58,15 +58,15 @@ const Index = () => {
         </section>
 
         {/* Categories */}
-        <section className="px-4 sm:px-6 pt-8 pb-6 sm:pt-12 sm:pb-8 max-w-7xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl mb-6 text-center">Shop by collection</h2>
+        <section className="px-4 sm:px-6 pt-6 pb-4 sm:pt-10 sm:pb-6 max-w-7xl mx-auto">
+          <h2 className="text-xl sm:text-2xl mb-4 text-center">Shop by collection</h2>
           
           {/* Mobile: Horizontal scrollable round small icons (5 visible at a time) */}
           <div className="md:hidden overflow-x-auto scrollbar-hide">
-            <div className="flex gap-3 pb-2">
+            <div className="flex gap-2.5 pb-2">
               {cats.map((c) => (
-                <Link key={c.id} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-20">
-                  <div className="w-20 h-20 overflow-hidden rounded-full bg-muted mb-2 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
+                <Link key={c.id} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
+                  <div className="w-16 h-16 overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
                     <EditableImage
                       slotKey={`home_collection_${c.slug}`}
                       defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
@@ -75,7 +75,7 @@ const Index = () => {
                       imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <p className="text-center text-[11px] font-medium line-clamp-2 leading-tight">{c.name}</p>
+                  <p className="text-center text-[9px] font-medium line-clamp-2 leading-tight">{c.name}</p>
                 </Link>
               ))}
             </div>
@@ -145,13 +145,13 @@ const Index = () => {
 
         {/* Featured */}
         {featured.length > 0 && (
-          <section className="pt-6 sm:pt-8 pb-12">
+          <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-2xl sm:text-3xl mb-4 sm:mb-6 text-center">Featured Products</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 sm:gap-4">
+              <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center">Featured Products</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1.5 sm:gap-3">
                 {featured.map((p) => (
                   <Link key={p.id} to={`/product/${p.slug}`} className="group">
-                    <div className="aspect-[3/4] bg-muted rounded overflow-hidden mb-1.5 sm:mb-2 relative">
+                    <div className="aspect-[3/4] bg-muted rounded overflow-hidden mb-1 sm:mb-1.5 relative">
                       {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
                       {p.images?.[0] && (
                         <img 
@@ -161,9 +161,9 @@ const Index = () => {
                         />
                       )}
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] sm:text-xs text-center line-clamp-1 leading-tight">{p.name}</p>
-                      <p className="text-[10px] sm:text-xs text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
+                    <div className="space-y-0">
+                      <p className="text-[9px] sm:text-[10px] text-center line-clamp-1 leading-tight">{p.name}</p>
+                      <p className="text-[9px] sm:text-[10px] text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
                     </div>
                   </Link>
                 ))}
