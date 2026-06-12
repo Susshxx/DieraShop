@@ -38,6 +38,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(KEY, JSON.stringify(items));
   }, [items]);
 
+  // Listen for storage events to sync cart state (e.g., when logged out or admin logs in)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const storedItems = JSON.parse(localStorage.getItem(KEY) || "[]");
+        setItems(storedItems);
+      } catch {
+        setItems([]);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const keyOf = (id: string, size?: string, color?: string) => `${id}::${size ?? ""}::${color ?? ""}`;
 
   const add = (i: CartItem) => {
@@ -61,7 +76,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         )
         .filter((c) => c.quantity > 0)
     );
-  const clear = () => setItems([]);
+  const clear = () => {
+    setItems([]);
+    localStorage.removeItem(KEY);
+  };
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const count = items.reduce((s, i) => s + i.quantity, 0);
 
