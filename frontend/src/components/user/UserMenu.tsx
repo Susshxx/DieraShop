@@ -23,17 +23,21 @@ const UserMenu = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => nav("/account")}><UserIcon className="w-4 h-4 mr-2" /> My account</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => nav("/account/orders")}><Package className="w-4 h-4 mr-2" /> Orders</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => nav("/account/chat")}><MessageCircle className="w-4 h-4 mr-2" /> Chat with us</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => nav("/account/notifications")}><Bell className="w-4 h-4 mr-2" /> Notifications</DropdownMenuItem>
-        {role === "admin" && (
+        {role !== "admin" && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => nav("/admin")}><ShieldCheck className="w-4 h-4 mr-2" /> Admin dashboard</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/account")}><UserIcon className="w-4 h-4 mr-2" /> My account</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/account/orders")}><Package className="w-4 h-4 mr-2" /> Orders</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/account/chat")}><MessageCircle className="w-4 h-4 mr-2" /> Chat with us</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/account/notifications")}><Bell className="w-4 h-4 mr-2" /> Notifications</DropdownMenuItem>
           </>
         )}
-        <DropdownMenuSeparator />
+        {role === "admin" && (
+          <>
+            <DropdownMenuItem onClick={() => nav("/admin")}><ShieldCheck className="w-4 h-4 mr-2" /> Admin dashboard</DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {role !== "admin" && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={async () => { await signOut(); nav("/"); }}><LogOut className="w-4 h-4 mr-2" /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

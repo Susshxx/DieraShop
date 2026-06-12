@@ -41,6 +41,79 @@ adminRouter.get('/', verifyToken, requireAdmin, async (_req, res) => {
   res.json(slots.map(mapSlot));
 });
 
+// POST - Create new site image with image data
+adminRouter.post('/', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { slotKey, title, subtitle, alt, link, sortOrder, imageData } = req.body;
+    
+    if (!slotKey || !imageData) {
+      return res.status(400).json({ error: 'slotKey and imageData are required' });
+    }
+
+    const slot = await SiteImage.create({
+      slotKey,
+      title: title || '',
+      subtitle: subtitle || '',
+      alt: alt || '',
+      link: link || '',
+      sortOrder: sortOrder || 0,
+      imageData,
+      imageMimeType: 'image/webp',
+      uploadedAt: new Date(),
+    });
+
+    res.status(201).json(mapSlot(slot));
+  } catch (error) {
+    console.error('Create site image error:', error);
+    res.status(500).json({ error: 'Failed to create site image' });
+  }
+});
+
+// PUT - Update site image by ID
+adminRouter.put('/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { title, subtitle, alt, link, sortOrder } = req.body;
+    
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (subtitle !== undefined) updateData.subtitle = subtitle;
+    if (alt !== undefined) updateData.alt = alt;
+    if (link !== undefined) updateData.link = link;
+    if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
+    
+    const slot = await SiteImage.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+    
+    if (!slot) {
+      return res.status(404).json({ error: 'Site image not found' });
+    }
+    
+    res.json(mapSlot(slot));
+  } catch (error) {
+    console.error('Update site image error:', error);
+    res.status(500).json({ error: 'Failed to update site image' });
+  }
+});
+
+// DELETE - Delete site image by ID
+adminRouter.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const slot = await SiteImage.findByIdAndDelete(req.params.id);
+    
+    if (!slot) {
+      return res.status(404).json({ error: 'Site image not found' });
+    }
+    
+    res.json({ message: 'Site image deleted successfully' });
+  } catch (error) {
+    console.error('Delete site image error:', error);
+    res.status(500).json({ error: 'Failed to delete site image' });
+  }
+});
+
 adminRouter.patch('/:slotKey', verifyToken, requireAdmin, async (req, res) => {
   const { title, subtitle, alt, link, sortOrder } = req.body;
   const slot = await SiteImage.findOneAndUpdate(

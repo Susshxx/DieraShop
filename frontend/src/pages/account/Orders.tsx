@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNPR } from "@/hooks/useCart";
@@ -11,14 +12,24 @@ import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 
+// Helper function to convert product name to slug
+const nameToSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 const Orders = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [reviewDialog, setReviewDialog] = useState<{ productId: string; orderId: string; productName: string; existingReview?: any } | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [viewOrder, setViewOrder] = useState<any | null>(null);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +41,19 @@ const Orders = () => {
   useEffect(() => {
     loadOrders();
   }, [user]);
+
+  // Auto-open order if orderId is in URL params
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    if (orderId && orders.length > 0) {
+      const order = orders.find(o => o.id === orderId || String(o.id).slice(-8) === orderId.slice(-8));
+      if (order) {
+        setViewOrder(order);
+        // Remove orderId from URL after opening
+        setSearchParams({});
+      }
+    }
+  }, [orders, searchParams, setSearchParams]);
 
   const cancelOrder = async () => {
     if (!cancelId) return;
@@ -156,7 +180,11 @@ const Orders = () => {
           </div>
           <div className="mt-3 text-sm space-y-2">
             {o.order_items?.map((it: any) => (
-              <div key={it.id || it.product_name} className="flex items-center gap-3">
+              <Link
+                key={it.id || it.product_name}
+                to={`/product/${nameToSlug(it.product_name)}`}
+                className="flex items-center gap-3 hover:bg-accent/50 rounded p-1 -m-1 transition-colors"
+              >
                 {it.product_image && (
                   <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
                     <img
@@ -168,12 +196,15 @@ const Orders = () => {
                 )}
                 <div className="flex justify-between items-center flex-1 text-muted-foreground">
                   <div className="flex-1">
-                    <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
+                    <span className="hover:text-foreground transition-colors">{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
                     {o.status === 'delivered' && (
                       <Button
                         variant="link"
                         size="sm"
-                        onClick={() => openReviewDialog(it.product_id, o.id, it.product_name)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openReviewDialog(it.product_id, o.id, it.product_name);
+                        }}
                         className="ml-2 h-auto p-0 text-xs text-primary"
                       >
                         Review
@@ -182,7 +213,7 @@ const Orders = () => {
                   </div>
                   <span className="ml-2">{formatNPR(it.price_npr * it.qty)}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <div className="mt-2 text-xs text-muted-foreground">

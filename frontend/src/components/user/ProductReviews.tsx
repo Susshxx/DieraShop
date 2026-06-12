@@ -87,60 +87,60 @@ const ProductReviews = ({ productId }: Props) => {
   };
 
   return (
-    <div className="px-4 sm:px-6 py-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold">Customer Reviews</h2>
+          <h2 className="text-lg font-medium">Customer Reviews</h2>
           {stats.totalReviews > 0 && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-1">
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
-                    className={`w-5 h-5 ${s <= Math.round(stats.averageRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                    className={`w-3 h-3 ${s <= Math.round(stats.averageRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                   />
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">
-                {stats.averageRating.toFixed(1)} out of 5 ({stats.totalReviews} {stats.totalReviews === 1 ? "review" : "reviews"})
+              <span className="text-xs text-muted-foreground">
+                {stats.averageRating.toFixed(1)} ({stats.totalReviews})
               </span>
             </div>
           )}
         </div>
         {canReview && (
-          <Button onClick={() => setShowDialog(true)}>Write a Review</Button>
+          <Button size="sm" onClick={() => setShowDialog(true)}>Write Review</Button>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {reviews.map((r) => (
-          <div key={r.id} className="border border-border rounded-lg p-4 bg-card">
-            <div className="flex justify-between items-start mb-2">
+          <div key={r.id} className="border border-border rounded p-3 bg-card">
+            <div className="flex justify-between items-start mb-1">
               <div>
-                <p className="font-medium">{r.user_name}</p>
-                <div className="flex mt-1">
+                <p className="text-xs font-medium">{r.user_name}</p>
+                <div className="flex mt-0.5">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star
                       key={s}
-                      className={`w-4 h-4 ${s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                      className={`w-3 h-3 ${s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                     />
                   ))}
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground text-right">
                 {new Date(r.created_at).toLocaleDateString()}
-                {r.verified && <span className="ml-2 text-green-600">✓ Verified Purchase</span>}
+                {r.verified && <span className="ml-1 text-green-600">✓</span>}
               </div>
             </div>
-            <p className="text-sm mt-2">{r.comment}</p>
+            <p className="text-xs mt-1">{r.comment}</p>
             {r.images && r.images.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
+              <div className="flex gap-1.5 mt-2 flex-wrap">
                 {r.images.map((img: string, idx: number) => (
                   <img
                     key={idx}
                     src={img}
-                    alt={`Review image ${idx + 1}`}
-                    className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80"
+                    alt={`Review ${idx + 1}`}
+                    className="w-14 h-14 object-cover rounded cursor-pointer hover:opacity-80"
                     onClick={() => setEnlargedImage(img)}
                   />
                 ))}
@@ -149,19 +149,19 @@ const ProductReviews = ({ productId }: Props) => {
           </div>
         ))}
         {reviews.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">No reviews yet. Be the first to review this product!</p>
+          <p className="text-xs text-muted-foreground text-center py-4">No reviews yet.</p>
         )}
       </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Write Your Review</DialogTitle>
+            <DialogTitle className="text-base">Write Your Review</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="text-sm font-medium">Rating</label>
-              <div className="flex gap-1 mt-2">
+              <label className="text-xs font-medium">Rating</label>
+              <div className="flex gap-1 mt-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
                     key={s}
@@ -170,49 +170,49 @@ const ProductReviews = ({ productId }: Props) => {
                     className="focus:outline-none"
                   >
                     <Star
-                      className={`w-8 h-8 ${s <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} hover:text-yellow-400 transition`}
+                      className={`w-6 h-6 ${s <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} hover:text-yellow-400 transition`}
                     />
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label htmlFor="comment" className="text-sm font-medium">
+              <label htmlFor="comment" className="text-xs font-medium">
                 Your Review
               </label>
               <Textarea
                 id="comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your experience with this product..."
-                className="mt-2"
-                rows={4}
+                placeholder="Share your experience..."
+                className="mt-1 text-xs"
+                rows={3}
                 maxLength={1000}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Photos (Optional, max 5)</label>
+              <label className="text-xs font-medium">Photos (Optional, max 5)</label>
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 onChange={handleImageSelect}
-                className="mt-2 block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
+                className="mt-1 block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
                 disabled={images.length >= 5}
               />
               {images.length > 0 && (
-                <div className="flex gap-2 mt-2 flex-wrap">
+                <div className="flex gap-1.5 mt-2 flex-wrap">
                   {images.map((img, idx) => (
                     <div key={idx} className="relative">
                       <img
                         src={URL.createObjectURL(img)}
                         alt={`Preview ${idx + 1}`}
-                        className="w-16 h-16 object-cover rounded"
+                        className="w-12 h-12 object-cover rounded"
                       />
                       <button
                         type="button"
                         onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs"
                       >
                         ×
                       </button>
@@ -221,7 +221,7 @@ const ProductReviews = ({ productId }: Props) => {
                 </div>
               )}
             </div>
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading} className="w-full" size="sm">
               {loading ? "Posting..." : "Post Review"}
             </Button>
           </form>

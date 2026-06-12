@@ -82,7 +82,19 @@ const Index = () => {
         {/* Mid-Page Banner */}
         <section className="relative w-full px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Mobile: Single image */}
+            <div className="relative overflow-hidden group md:hidden">
+              <EditableImage
+                slotKey="home_mid_banner_right"
+                defaultSrc={heroDefault}
+                alt="Featured collection"
+                className="block"
+                imgClassName="w-full h-[25vh] object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </div>
+            
+            {/* Desktop: Two images */}
+            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-6">
               {/* Left Image - 1/3 width */}
               <div className="relative overflow-hidden group">
                 <EditableImage
@@ -90,18 +102,18 @@ const Index = () => {
                   defaultSrc={heroDefault}
                   alt="Collection highlight"
                   className="block"
-                  imgClassName="w-full h-[30vh] md:h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
               
               {/* Right Image - 2/3 width */}
-              <div className="relative md:col-span-2 overflow-hidden group">
+              <div className="relative col-span-2 overflow-hidden group">
                 <EditableImage
                   slotKey="home_mid_banner_right"
                   defaultSrc={heroDefault}
                   alt="Featured collection"
                   className="block"
-                  imgClassName="w-full h-[30vh] md:h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
             </div>

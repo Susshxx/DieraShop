@@ -20,6 +20,7 @@ const ProductEditor = () => {
     name: "", slug: "", description: "", price: 0, stock: 0,
     images: [] as string[], sizes: [] as string[], colors: [] as string[],
     colorImageMap: {} as Record<string, number>,
+    variantStock: {} as Record<string, number>,
     category_id: null, featured: false, active: true,
   });
   const [busy, setBusy] = useState(false);
@@ -32,11 +33,20 @@ const ProductEditor = () => {
     api.get<any[]>("/categories").then(setCats).catch(() => {});
     if (!isNew) {
       api.get<any>(`/products/${id}`).then((data) => {
+        // Extract category ID - could be in categoryId, category_id, or as an object
+        let categoryId = null;
+        if (data.categoryId) {
+          categoryId = typeof data.categoryId === 'object' ? data.categoryId._id : data.categoryId;
+        } else if (data.category_id) {
+          categoryId = typeof data.category_id === 'object' ? data.category_id._id : data.category_id;
+        }
+        
         const productData = {
           ...data,
           price: data.price_npr ?? data.price,
-          category_id: data.category_id ?? data.categoryId,
+          category_id: categoryId,
           colorImageMap: data.colorImageMap || {},
+          variantStock: data.variantStock || {},
         };
         setForm(productData);
         setSizesInput((data.sizes || []).join(", "));
@@ -98,6 +108,7 @@ const ProductEditor = () => {
       sizes: form.sizes || [],
       colors: form.colors || [],
       colorImageMap: form.colorImageMap || {},
+      variantStock: form.variantStock || {},
       category_id: form.category_id || null,
       featured: form.featured,
       active: form.active,
@@ -161,9 +172,33 @@ const ProductEditor = () => {
           <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto from name" /></div>
         </div>
         <div><Label>Description</Label><Textarea rows={4} value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div><Label>Price (NPR)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
-          <div><Label>Stock</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} required /></div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Price (NPR)</Label>
+            <Input 
+              type="number" 
+              step="0.01" 
+              value={form.price} 
+              onFocus={(e) => {
+                // Clear the 0 when user focuses to type
+                if (e.target.value === '0' || e.target.value === '0.00') {
+                  e.target.value = '';
+                }
+              }}
+              onBlur={(e) => {
+                // Set to 0 if left empty or only whitespace
+                const val = e.target.value.trim();
+                if (val === '') {
+                  setForm({ ...form, price: 0 });
+                }
+              }}
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                setForm({ ...form, price: val === '' ? 0 : e.target.value });
+              }} 
+              required 
+            />
+          </div>
           <div>
             <Label>Category</Label>
             <select value={form.category_id || ""} onChange={(e) => setForm({ ...form, category_id: e.target.value || null })} className="w-full h-10 rounded border border-input bg-background px-3 text-sm">
@@ -238,6 +273,64 @@ const ProductEditor = () => {
             </div>
           )}
         </div>
+
+        {/* Variant Stock Management */}
+        {form.sizes?.length > 0 && form.colors?.length > 0 && (
+          <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/10">
+            <Label className="text-base font-semibold">Variant Stock (Size × Color)</Label>
+            <p className="text-xs text-muted-foreground">Set stock for each size-color combination</p>
+            <div className="grid gap-2">
+              {form.sizes.map((size: string) => (
+                <div key={size} className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Size: {size}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {form.colors.map((color: string) => {
+                      const variantKey = `${size}-${color}`;
+                      const currentStock = form.variantStock?.[variantKey] ?? 0;
+                      return (
+                        <div key={variantKey} className="flex items-center gap-1">
+                          <span className="text-xs min-w-[60px] truncate">{color}:</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={currentStock}
+                            onFocus={(e) => {
+                              // Clear the 0 when user focuses to type
+                              if (e.target.value === '0') {
+                                e.target.value = '';
+                              }
+                            }}
+                            onBlur={(e) => {
+                              // Set to 0 if left empty or only whitespace
+                              const val = e.target.value.trim();
+                              if (val === '' || val === '0') {
+                                const newVariantStock = { ...form.variantStock };
+                                newVariantStock[variantKey] = 0;
+                                setForm({ ...form, variantStock: newVariantStock });
+                              }
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value.trim();
+                              const newVariantStock = { ...form.variantStock };
+                              // If empty, set to 0, otherwise use the number
+                              newVariantStock[variantKey] = val === '' ? 0 : Number(val);
+                              setForm({ ...form, variantStock: newVariantStock });
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="0"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Leave blank or set to 0 for out of stock variants
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 text-sm"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /> Featured</label>

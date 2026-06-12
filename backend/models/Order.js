@@ -19,7 +19,8 @@ const orderSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     fullName: { type: String, required: true },
     notes: { type: String, default: '' },
-    paymentMethod: { type: String, enum: ['cod', 'khalti', 'esewa'], default: 'cod' },
+    paymentMethod: { type: String, enum: ['cod', 'phonepay'], default: 'cod' },
+    paymentScreenshot: { type: String }, // Data URI for PhonePay payment screenshot
     paymentDetails: {
       transactionId: { type: String },
       method: { type: String },

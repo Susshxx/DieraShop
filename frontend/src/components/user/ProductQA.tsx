@@ -75,52 +75,52 @@ const ProductQA = ({ productId }: { productId: string }) => {
   };
 
   return (
-    <section className="mt-12 px-6 max-w-3xl">
-      <h2 className="text-2xl mb-4">Questions & Answers</h2>
+    <section className="space-y-3">
+      <h2 className="text-lg font-medium">Questions & Answers</h2>
 
       {user && role !== 'admin' ? (
-        <form onSubmit={ask} className="space-y-2 mb-8">
-          <Textarea value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask a question about this product…" rows={3} />
-          <Button type="submit" disabled={!q.trim()}>Post question</Button>
+        <form onSubmit={ask} className="space-y-2">
+          <Textarea value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask a question about this product…" rows={2} className="text-xs" />
+          <Button type="submit" size="sm" disabled={!q.trim()}>Post question</Button>
         </form>
       ) : user && role === 'admin' ? (
-        <p className="text-sm text-muted-foreground mb-8 italic">
-          Admins cannot ask questions about products.
+        <p className="text-xs text-muted-foreground italic">
+          Admins can answer questions but cannot ask them.
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground mb-8">
+        <p className="text-xs text-muted-foreground">
           <Link to="/auth/login" className="text-primary underline">Sign in</Link> to ask a question.
         </p>
       )}
 
-      <div className="space-y-6">
-        {items.length === 0 && <p className="text-sm text-muted-foreground">No questions yet.</p>}
+      <div className="space-y-3">
+        {items.length === 0 && <p className="text-xs text-muted-foreground">No questions yet.</p>}
         {items.map((item) => (
-          <div key={item.id} className="border border-border rounded-lg p-4 bg-card">
-            <p className="text-sm font-medium">Q: {item.question}</p>
-            <p className="text-xs text-muted-foreground mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
-            <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary">
+          <div key={item.id} className="border border-border rounded p-3 bg-card">
+            <p className="text-xs font-medium">Q: {item.question}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(item.created_at).toLocaleDateString()}</p>
+            <div className="mt-2 space-y-1 pl-3 border-l-2 border-primary">
               {item.answer ? (
                 <div>
-                  <p className="text-sm">A: {item.answer}</p>
-                  {item.answered_at && <p className="text-xs text-muted-foreground">{new Date(item.answered_at).toLocaleDateString()}</p>}
+                  <p className="text-xs">A: {item.answer}</p>
+                  {item.answered_at && <p className="text-[10px] text-muted-foreground">{new Date(item.answered_at).toLocaleDateString()}</p>}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground italic">Awaiting answer…</p>
+                <p className="text-[10px] text-muted-foreground italic">Awaiting answer…</p>
               )}
             </div>
             {role === "admin" && !item.answer && (
-              <div className="mt-3">
+              <div className="mt-2">
                 {answerFor === item.id ? (
                   <div className="space-y-2">
-                    <Textarea value={answerText} onChange={(e) => setAnswerText(e.target.value)} rows={2} placeholder="Write an answer…" />
+                    <Textarea value={answerText} onChange={(e) => setAnswerText(e.target.value)} rows={2} placeholder="Write an answer…" className="text-xs" />
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => answer(item.id)}>Reply</Button>
                       <Button size="sm" variant="ghost" onClick={() => setAnswerFor(null)}>Cancel</Button>
                     </div>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" onClick={() => setAnswerFor(item.id)}>Answer as admin</Button>
+                  <Button size="sm" variant="outline" onClick={() => setAnswerFor(item.id)}>Answer</Button>
                 )}
               </div>
             )}

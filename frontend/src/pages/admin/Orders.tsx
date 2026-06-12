@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { formatNPR } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Trash2, Eye } from "lucide-react";
+
+// Helper function to convert product name to slug
+const nameToSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered"] as const;
 type OrderStatus = typeof STATUSES[number];
@@ -29,12 +38,29 @@ const canTransitionTo = (currentStatus: string, targetStatus: OrderStatus): bool
 };
 
 const AdminOrders = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewOrder, setViewOrder] = useState<any | null>(null);
   
   const load = () => api.get<any[]>("/admin/orders").then(setOrders).catch(() => {});
-  useEffect(() => { load(); }, []);
+  
+  useEffect(() => { 
+    load(); 
+  }, []);
+
+  // Auto-open order if orderId is in URL params
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    if (orderId && orders.length > 0) {
+      const order = orders.find(o => o.id === orderId || String(o.id).slice(-8) === orderId.slice(-8));
+      if (order) {
+        setViewOrder(order);
+        // Remove orderId from URL after opening
+        setSearchParams({});
+      }
+    }
+  }, [orders, searchParams, setSearchParams]);
 
   const setStatus = async (id: string, status: OrderStatus) => {
     try {
@@ -98,7 +124,11 @@ const AdminOrders = () => {
             </div>
             <div className="mt-3 text-sm space-y-2">
               {o.order_items?.map((it: any) => (
-                <div key={it.id || it.product_name} className="flex items-center gap-3">
+                <Link 
+                  key={it.id || it.product_name} 
+                  to={`/product/${nameToSlug(it.product_name)}`}
+                  className="flex items-center gap-3 hover:bg-accent/50 rounded p-1 -m-1 transition-colors"
+                >
                   {it.product_image && (
                     <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
                       <img
@@ -109,10 +139,10 @@ const AdminOrders = () => {
                     </div>
                   )}
                   <div className="flex justify-between flex-1 text-muted-foreground">
-                    <span>{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
+                    <span className="hover:text-foreground transition-colors">{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
                     <span>{formatNPR(it.price_npr * it.qty)}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <div className="mt-3 flex flex-wrap gap-1">
@@ -218,7 +248,46 @@ const AdminOrders = () => {
                     <span className="font-bold text-foreground min-w-[130px]">Method:</span>
                     <span className="font-semibold text-foreground">{viewOrder.payment_method?.toUpperCase()}</span>
                   </div>
-                  {viewOrder.paymentDetails?.transactionId && (
+                  
+                  {/* PhonePay Payment Screenshot */}
+                  {viewOrder.payment_method === 'phonepay' && viewOrder.paymentScreenshot && (
+                    <div className="mt-3">
+                      <p className="font-bold text-foreground mb-2">Payment Screenshot:</p>
+                      <div className="border rounded-lg p-2 bg-muted/20">
+                        <img
+                          src={viewOrder.paymentScreenshot}
+                          alt="Payment screenshot"
+                          className="w-full max-h-96 object-contain rounded"
+                        />
+                      </div>
+                      
+                      {/* Approve/Reject Buttons for awaiting_payment status */}
+                      {viewOrder.status === 'awaiting_payment' && (
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            onClick={() => {
+                              setStatus(viewOrder.id, 'confirmed');
+                              setViewOrder(null);
+                            }}
+                            className="flex-1"
+                          >
+                            Approve Payment
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => {
+                              setDeleteId(viewOrder.id);
+                              setViewOrder(null);
+                            }}
+                            className="flex-1"
+                          >
+                            Reject & Cancel Order
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                                    {viewOrder.paymentDetails?.transactionId && (
                     <div className="flex items-start gap-2">
                       <span className="font-bold text-foreground min-w-[130px]">Transaction ID:</span>
                       <span className="font-mono text-sm">{viewOrder.paymentDetails.transactionId}</span>
@@ -237,7 +306,11 @@ const AdminOrders = () => {
                 <h3 className="font-semibold mb-3">Order Items</h3>
                 <div className="space-y-3">
                   {viewOrder.order_items?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex gap-4 items-start pb-3 border-b last:border-b-0 last:pb-0">
+                    <Link 
+                      key={idx} 
+                      to={`/product/${nameToSlug(item.product_name)}`}
+                      className="flex gap-4 items-start pb-3 border-b last:border-b-0 last:pb-0 hover:bg-accent/30 rounded p-2 -m-2 transition-colors"
+                    >
                       {/* Product Image */}
                       {item.product_image && (
                         <div className="flex-shrink-0 w-20 h-20 rounded-md overflow-hidden bg-muted">
@@ -251,7 +324,7 @@ const AdminOrders = () => {
                       
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-base">{item.product_name}</p>
+                        <p className="font-semibold text-base hover:text-primary transition-colors">{item.product_name}</p>
                         {item.category_name && (
                           <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{item.category_name}</p>
                         )}
@@ -267,7 +340,7 @@ const AdminOrders = () => {
                       <div className="flex-shrink-0 text-right">
                         <p className="font-bold text-base">{formatNPR(item.price_npr * item.qty)}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

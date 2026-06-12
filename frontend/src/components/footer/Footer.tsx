@@ -52,7 +52,7 @@ const Footer = () => {
           </div>
 
           {/* Link lists - Right side */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-8">
             {/* Shop */}
             <div>
               <h4 className="text-sm font-normal mb-4">Shop</h4>
@@ -71,14 +71,13 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Support */}
+            {/* About */}
             <div>
-              <h4 className="text-sm font-normal mb-4">Support</h4>
+              <h4 className="text-sm font-normal mb-4">About</h4>
               <ul className="space-y-2">
-                <li><Link to="/about/customer-care" className="text-sm font-light text-black/70 hover:text-black transition-colors">Care Instructions</Link></li>
-                <li><Link to="/about/customer-care" className="text-sm font-light text-black/70 hover:text-black transition-colors">Returns</Link></li>
-                <li><Link to="/about/customer-care" className="text-sm font-light text-black/70 hover:text-black transition-colors">Shipping</Link></li>
-                <li><Link to="/about/customer-care" className="text-sm font-light text-black/70 hover:text-black transition-colors">Contact</Link></li>
+                <li><Link to="/about/our-story" className="text-sm font-light text-black/70 hover:text-black transition-colors">Our Story</Link></li>
+                <li><Link to="/about/sustainability" className="text-sm font-light text-black/70 hover:text-black transition-colors">Sustainability</Link></li>
+                <li><Link to="/about/store-locator" className="text-sm font-light text-black/70 hover:text-black transition-colors">Store Locator</Link></li>
               </ul>
             </div>
 
@@ -86,6 +85,7 @@ const Footer = () => {
             <div>
               <h4 className="text-sm font-normal mb-4">Connect</h4>
               <ul className="space-y-2">
+                <li><Link to="/about/customer-care" className="text-sm font-light text-black/70 hover:text-black transition-colors">Contact Us</Link></li>
                 <li><a href="https://www.instagram.com/_diera_shop_/" target="_blank" rel="noopener noreferrer" className="text-sm font-light text-black/70 hover:text-black transition-colors">Instagram</a></li>
                 <li><a href="https://www.tiktok.com/@_diera_shop_" target="_blank" rel="noopener noreferrer" className="text-sm font-light text-black/70 hover:text-black transition-colors">Tiktok</a></li>
               </ul>

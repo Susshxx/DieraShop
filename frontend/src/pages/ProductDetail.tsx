@@ -13,12 +13,28 @@ import ProductReviews from "@/components/user/ProductReviews";
 const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { add } = useCart();
+  const { add, items } = useCart();
   const { role, user } = useAuth();
   const [p, setP] = useState<any>(null);
   const [mainImg, setMainImg] = useState<string>("");
   const [size, setSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
+
+  // Get variant-specific stock
+  const getVariantStock = () => {
+    if (!p || !size || !selectedColor) return p?.stock || 0;
+    
+    // Check if product has variantStock data
+    if (p.variantStock && Object.keys(p.variantStock).length > 0) {
+      const variantKey = `${size}-${selectedColor}`;
+      return p.variantStock[variantKey] ?? 0;
+    }
+    
+    // Fallback to general stock
+    return p.stock || 0;
+  };
+
+  const variantStock = getVariantStock();
 
   useEffect(() => {
     if (!productId) return;
@@ -68,6 +84,19 @@ const ProductDetail = () => {
     }
     if (p.sizes?.length && !size) return toast.error("Please select a size");
     if (p.colors?.length && !selectedColor) return toast.error("Please select a color");
+    
+    // Check current cart quantity for this product variant
+    const existingItem = items.find(
+      item => item.productId === p.id && 
+              item.size === size && 
+              item.color === selectedColor
+    );
+    const currentQty = existingItem ? existingItem.quantity : 0;
+    
+    if (currentQty + 1 > variantStock) {
+      return toast.error(`Only ${variantStock} items available in stock`);
+    }
+    
     add({ 
       productId: p.id, 
       name: p.name, 
@@ -92,6 +121,19 @@ const ProductDetail = () => {
     }
     if (p.sizes?.length && !size) return toast.error("Please select a size");
     if (p.colors?.length && !selectedColor) return toast.error("Please select a color");
+    
+    // Check current cart quantity for this product variant
+    const existingItem = items.find(
+      item => item.productId === p.id && 
+              item.size === size && 
+              item.color === selectedColor
+    );
+    const currentQty = existingItem ? existingItem.quantity : 0;
+    
+    if (currentQty + 1 > variantStock) {
+      return toast.error(`Only ${variantStock} items available in stock`);
+    }
+    
     add({ 
       productId: p.id, 
       name: p.name, 
@@ -109,46 +151,46 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <DieraHeader />
       <main className="flex-1">
-        <div className="grid lg:grid-cols-2 gap-6 px-4 sm:px-6 py-8 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 max-w-5xl mx-auto">
           <div>
-            <div className="aspect-[3/4] bg-muted rounded overflow-hidden">
+            <div className="aspect-square bg-muted rounded overflow-hidden">
               {mainImg && <img src={mainImg} alt={p.name} className="w-full h-full object-cover" />}
             </div>
             {p.images?.length > 1 && (
-              <div className="flex gap-2 mt-3 overflow-x-auto">
+              <div className="flex gap-1.5 mt-1.5 overflow-x-auto">
                 {p.images.map((img: string, i: number) => (
-                  <button key={i} onClick={() => setMainImg(img)} className={`w-20 h-20 rounded overflow-hidden border-2 ${mainImg === img ? "border-primary" : "border-transparent"}`}>
+                  <button key={i} onClick={() => setMainImg(img)} className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded overflow-hidden border-2 ${mainImg === img ? "border-primary" : "border-transparent"}`}>
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <div>
-            <Link to={`/category/all`} className="text-xs text-muted-foreground uppercase">Diera Shop</Link>
-            <h1 className="text-3xl mt-1 mb-2">{p.name}</h1>
-            <p className="text-xl mb-4">{formatNPR(p.price_npr ?? p.price)}</p>
-            <p className="text-sm text-muted-foreground mb-6 whitespace-pre-line">{p.description}</p>
+          <div className="space-y-2">
+            <Link to={`/category/all`} className="text-xs text-muted-foreground uppercase tracking-wide">Diera Shop</Link>
+            <h1 className="text-xl sm:text-2xl font-normal italic">{p.name}</h1>
+            <p className="text-lg sm:text-xl">{formatNPR(p.price_npr ?? p.price)}</p>
+            <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{p.description}</p>
 
             {p.sizes?.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm mb-2">Size</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="pt-1">
+                <p className="text-xs mb-1.5 italic">Size</p>
+                <div className="flex flex-wrap gap-1.5">
                   {p.sizes.map((s: string) => (
-                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-2 text-sm border rounded ${size === s ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{s}</button>
+                    <button key={s} onClick={() => setSize(s)} className={`px-3 py-1.5 text-xs border rounded ${size === s ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{s}</button>
                   ))}
                 </div>
               </div>
             )}
             {p.colors?.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm mb-2">Color</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="pt-1">
+                <p className="text-xs mb-1.5 italic">Color</p>
+                <div className="flex flex-wrap gap-1.5">
                   {p.colors.map((color: string) => (
                     <button 
                       key={color} 
                       onClick={() => handleColorSelect(color)} 
-                      className={`px-4 py-2 text-sm border rounded transition-all ${selectedColor === color ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:border-primary/50"}`}
+                      className={`px-3 py-1.5 text-xs border rounded transition-all ${selectedColor === color ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:border-primary/50"}`}
                     >
                       {color}
                     </button>
@@ -158,35 +200,51 @@ const ProductDetail = () => {
             )}
 
             {role !== "admin" && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={addToCart} 
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
-                  disabled={p.stock <= 0}
-                >
-                  {p.stock > 0 ? "Add to bag" : "Out of stock"}
-                </Button>
-                <Button 
-                  onClick={buyNow} 
-                  className="flex-1 sm:flex-none"
-                  disabled={p.stock <= 0}
-                >
-                  {p.stock > 0 ? "Buy now" : "Out of stock"}
-                </Button>
+              <div className="pt-2">
+                {variantStock <= 0 ? (
+                  <Button 
+                    variant="destructive"
+                    className="w-full h-9 text-xs"
+                    disabled
+                  >
+                    Out of stock
+                  </Button>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-1.5">
+                    <Button 
+                      onClick={addToCart} 
+                      variant="outline"
+                      className="flex-1 h-9 text-xs"
+                    >
+                      Add to bag
+                    </Button>
+                    <Button 
+                      onClick={buyNow} 
+                      className="flex-1 h-9 text-xs"
+                    >
+                      Buy now
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
             
             {role === "admin" && (
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-xs text-muted-foreground italic pt-2">
                 Admins cannot purchase items
               </p>
             )}
 
-            <p className="text-xs text-muted-foreground mt-4">{p.stock} in stock</p>
+            <p className="text-xs text-muted-foreground italic pt-1">
+              {size && selectedColor ? (
+                <>{variantStock} in stock for {size} - {selectedColor}</>
+              ) : (
+                <>Select size and color to see availability</>
+              )}
+            </p>
           </div>
         </div>
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-4 px-3 sm:px-4 pb-4 max-w-5xl mx-auto">
           <ProductQA productId={p.id} />
           <ProductReviews productId={p.id} />
         </div>

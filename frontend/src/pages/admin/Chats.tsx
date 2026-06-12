@@ -124,7 +124,7 @@ const Chats = () => {
   return (
     <div>
       <h1 className="text-2xl mb-6">Chats</h1>
-      <div className="grid md:grid-cols-3 gap-4" style={{ height: '70vh' }}>
+      <div className="grid md:grid-cols-3 gap-4 h-[70vh]">
         <div className="border border-border rounded-lg bg-card overflow-y-auto">
           {convs.map((c) => (
             <button key={c.id} onClick={() => setActive(c)}
@@ -138,7 +138,7 @@ const Chats = () => {
           ))}
           {convs.length === 0 && <p className="p-4 text-sm text-muted-foreground">No conversations.</p>}
         </div>
-        <div className="md:col-span-2 border border-border rounded-lg bg-card flex flex-col" style={{ height: '70vh' }}>
+        <div className="md:col-span-2 border border-border rounded-lg bg-card flex flex-col h-[70vh]">
           {!active && <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Select a conversation</div>}
           {active && (
             <>
@@ -148,7 +148,7 @@ const Chats = () => {
                 ))}
                 <div ref={endRef} />
               </div>
-              <form onSubmit={send} className="border-t border-border p-2 flex gap-2 shrink-0">
+              <form onSubmit={send} className="border-t border-border p-2 flex gap-2">
                 <input 
                   ref={fileInputRef}
                   type="file" 

@@ -37,7 +37,9 @@ const Chat = () => {
     };
   }, [convId]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { 
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" }); 
+  }, [messages]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +126,7 @@ const Chat = () => {
 
   return (
     <>
-      <div className="border border-border rounded-lg bg-card flex flex-col" style={{ height: '60vh' }}>
+      <div className="border border-border rounded-lg bg-card flex flex-col h-[60vh]">
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {messages.length === 0 && <p className="text-sm text-muted-foreground">Send us a message — we typically reply within a few hours.</p>}
           {messages.map((m) => (
@@ -132,7 +134,7 @@ const Chat = () => {
           ))}
           <div ref={endRef} />
         </div>
-        <form onSubmit={send} className="border-t border-border p-2 flex gap-2 shrink-0">
+        <form onSubmit={send} className="border-t border-border p-2 flex gap-2">
           <input 
             ref={fileInputRef}
             type="file" 

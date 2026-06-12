@@ -7,6 +7,7 @@ const notificationSchema = new mongoose.Schema(
     title: { type: String, required: true },
     body: { type: String, default: '' },
     link: { type: String, default: '' },
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' }, // Link to order
     readAt: { type: Date },
   },
   { timestamps: true }

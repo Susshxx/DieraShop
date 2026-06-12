@@ -12,6 +12,8 @@ const mapN = (n) => ({
   title: n.title,
   body: n.body,
   link: n.link,
+  order_id: n.orderId,
+  orderId: n.orderId,
   read_at: n.readAt,
   created_at: n.createdAt,
 });
@@ -57,6 +59,29 @@ router.patch('/:id/read', verifyToken, async (req, res) => {
     { readAt: new Date() }
   );
   res.json({ ok: true });
+});
+
+// Delete a notification
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    await Notification.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete all notifications
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    await Notification.deleteMany({ userId: req.user.id });
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;
