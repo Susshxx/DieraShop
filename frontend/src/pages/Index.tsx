@@ -130,28 +130,30 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Desktop: Two images - Full width, no gaps */}
-            <div className="hidden md:grid grid-cols-3">
-              {/* Left Image - 1/3 width */}
-              <div className="relative overflow-hidden group">
-                <EditableImage
-                  slotKey="home_mid_banner_left"
-                  defaultSrc={heroDefault}
-                  alt="Collection highlight"
-                  className="block"
-                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-              </div>
-              
-              {/* Right Image - 2/3 width */}
-              <div className="relative col-span-2 overflow-hidden group">
-                <EditableImage
-                  slotKey="home_mid_banner_right"
-                  defaultSrc={heroDefault}
-                  alt="Featured collection"
-                  className="block"
-                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
-                />
+            {/* Desktop: Two images with margins and gap */}
+            <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="grid grid-cols-3 gap-4 sm:gap-6">
+                {/* Left Image - 1/3 width */}
+                <div className="relative overflow-hidden group">
+                  <EditableImage
+                    slotKey="home_mid_banner_left"
+                    defaultSrc={heroDefault}
+                    alt="Collection highlight"
+                    className="block"
+                    imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+                
+                {/* Right Image - 2/3 width */}
+                <div className="relative col-span-2 overflow-hidden group">
+                  <EditableImage
+                    slotKey="home_mid_banner_right"
+                    defaultSrc={heroDefault}
+                    alt="Featured collection"
+                    className="block"
+                    imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
               </div>
             </div>
           </div>
