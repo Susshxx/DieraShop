@@ -85,16 +85,20 @@ const ProductDetail = () => {
     if (p.sizes?.length && !size) return toast.error("Please select a size");
     if (p.colors?.length && !selectedColor) return toast.error("Please select a color");
     
-    // Check current cart quantity for this product variant
+    // Check if item already exists in bag
     const existingItem = items.find(
       item => item.productId === p.id && 
               item.size === size && 
               item.color === selectedColor
     );
-    const currentQty = existingItem ? existingItem.quantity : 0;
     
-    if (currentQty + 1 > variantStock) {
-      return toast.error(`Only ${variantStock} items available in stock`);
+    if (existingItem) {
+      return toast.error("Item already in bag. Update quantity from your bag.");
+    }
+    
+    // Check stock availability
+    if (variantStock <= 0) {
+      return toast.error("Out of stock");
     }
     
     add({ 
@@ -122,28 +126,32 @@ const ProductDetail = () => {
     if (p.sizes?.length && !size) return toast.error("Please select a size");
     if (p.colors?.length && !selectedColor) return toast.error("Please select a color");
     
-    // Check current cart quantity for this product variant
+    // Check stock availability
+    if (variantStock <= 0) {
+      return toast.error("Out of stock");
+    }
+    
+    // Check if item already exists in bag
     const existingItem = items.find(
       item => item.productId === p.id && 
               item.size === size && 
               item.color === selectedColor
     );
-    const currentQty = existingItem ? existingItem.quantity : 0;
     
-    if (currentQty + 1 > variantStock) {
-      return toast.error(`Only ${variantStock} items available in stock`);
+    // For Buy Now, we allow it even if in bag and navigate to checkout
+    if (!existingItem) {
+      add({ 
+        productId: p.id, 
+        name: p.name, 
+        price: Number(p.price_npr ?? p.price), 
+        image: mainImg,
+        category: p.category_name || p.categoryName,
+        size, 
+        color: selectedColor,
+        quantity: 1 
+      });
     }
     
-    add({ 
-      productId: p.id, 
-      name: p.name, 
-      price: Number(p.price_npr ?? p.price), 
-      image: mainImg,
-      category: p.category_name || p.categoryName,
-      size, 
-      color: selectedColor,
-      quantity: 1 
-    });
     navigate("/checkout");
   };
 

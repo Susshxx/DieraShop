@@ -147,6 +147,13 @@ const Checkout = () => {
             <div><Label>Address</Label><Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required /></div>
             <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required /></div>
 
+            {/* Shipping Notice */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+              <p className="text-sm text-blue-900">
+                <span className="font-semibold">📦 Shipping Information:</span> Shipping fare is to be paid to the delivery person at the time of delivery.
+              </p>
+            </div>
+
             <h2 className="text-xl pt-4">Payment</h2>
             <div className="space-y-2">
               {[
@@ -268,6 +275,11 @@ const Checkout = () => {
               {items.length === 0 && <p className="text-sm text-muted-foreground">Empty.</p>}
             </div>
             <div className="border-t border-border pt-3 flex justify-between font-semibold"><span>Total</span><span>{formatNPR(total)}</span></div>
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                * Shipping charges will be collected by the delivery person upon delivery
+              </p>
+            </div>
           </aside>
         </div>
       </main>
