@@ -61,12 +61,12 @@ const Index = () => {
         <section className="px-4 sm:px-6 pt-6 pb-4 sm:pt-10 sm:pb-6 max-w-7xl mx-auto">
           <h2 className="text-xl sm:text-2xl mb-4 text-center">Shop by collection</h2>
           
-          {/* Mobile: Horizontal scrollable round small icons (5 visible at a time) */}
+          {/* Mobile: Horizontal scrollable circular icons */}
           <div className="md:hidden overflow-x-auto scrollbar-hide">
             <div className="flex gap-2.5 pb-2">
               {cats.map((c) => (
-                <Link key={c.id} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
-                  <div className="w-16 h-16 overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
+                <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
+                  <div className="w-16 h-16 aspect-square overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
                     <EditableImage
                       slotKey={`home_collection_${c.slug}`}
                       defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
@@ -102,22 +102,36 @@ const Index = () => {
           {cats.length === 0 && <p className="text-center text-muted-foreground text-sm">Add categories in the admin to get started.</p>}
         </section>
 
-        {/* Mid-Page Banner */}
-        <section className="relative w-full px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Mobile: Single image */}
+        {/* Mid-Page Banner - Full Width */}
+        <section className="relative w-full">
+          <div className="w-full">
+            {/* Mobile: Single image with quality text overlay */}
             <div className="relative overflow-hidden group md:hidden">
               <EditableImage
                 slotKey="home_mid_banner_right"
                 defaultSrc={heroDefault}
                 alt="Featured collection"
                 className="block"
-                imgClassName="w-full h-[25vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                imgClassName="w-full h-[40vh] object-cover"
               />
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center px-6 text-center">
+                <h3 className="text-white text-2xl mb-3 italic" style={{ fontFamily: 'Playball, cursive' }}>
+                  Quality Craftsmanship
+                </h3>
+                <p className="text-white/90 text-sm mb-4 max-w-md leading-relaxed">
+                  Every piece is thoughtfully crafted with premium fabrics and sustainable practices. Experience clothing that lasts, made with care for you and the planet.
+                </p>
+                <Link 
+                  to="/about/sustainability" 
+                  className="inline-block bg-white text-black px-6 py-2.5 rounded hover:bg-white/90 transition text-sm font-medium"
+                >
+                  Our Commitment
+                </Link>
+              </div>
             </div>
             
-            {/* Desktop: Two images */}
-            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-6">
+            {/* Desktop: Two images - Full width */}
+            <div className="hidden md:grid grid-cols-3 gap-0">
               {/* Left Image - 1/3 width */}
               <div className="relative overflow-hidden group">
                 <EditableImage

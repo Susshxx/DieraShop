@@ -14,15 +14,15 @@ const PrivacyPolicy = () => {
       <main className="pt-6">
         <div className="max-w-4xl mx-auto px-6 py-12">
           <header className="mb-12 text-center">
-            <h1 className="text-4xl font-light text-foreground mb-4">Privacy Policy</h1>
-            <p className="text-muted-foreground">Last updated: January 15, 2024</p>
+            <h1 className="text-4xl font-light italic text-foreground mb-4" style={{ fontFamily: 'Playball, cursive' }}>Privacy Policy</h1>
+            <p className="text-muted-foreground">Last updated: January 15, 2025</p>
           </header>
 
           <div className="prose prose-lg max-w-none space-y-8">
             <section>
               <h2 className="text-2xl font-light text-foreground mb-4">Introduction</h2>
               <p className="text-muted-foreground leading-relaxed">
-                At Linea Jewelry Inc. ("we," "our," or "us"), we respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, make a purchase, or interact with our services.
+                At Diera Shop ("we," "our," or "us"), we respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, make a purchase, or interact with our services.
               </p>
             </section>
 
@@ -36,8 +36,8 @@ const PrivacyPolicy = () => {
                   </p>
                   <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
                     <li>Name, email address, and contact information</li>
-                    <li>Billing and shipping addresses</li>
-                    <li>Payment information (processed securely through third-party providers)</li>
+                    <li>Billing and shipping addresses within Nepal</li>
+                    <li>Payment information (processed securely through PhonePay, eSewa, Khalti, or Cash on Delivery)</li>
                     <li>Account preferences and communication settings</li>
                   </ul>
                 </div>
@@ -57,12 +57,13 @@ const PrivacyPolicy = () => {
                 We use the information we collect for various purposes, including:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                <li>Processing and fulfilling your orders</li>
+                <li>Processing and fulfilling your clothing orders</li>
+                <li>Arranging delivery to your location in Nepal</li>
                 <li>Providing customer support and responding to inquiries</li>
-                <li>Sending promotional communications (with your consent)</li>
+                <li>Sending promotional communications about new collections (with your consent)</li>
                 <li>Improving our website functionality and user experience</li>
                 <li>Preventing fraud and ensuring security</li>
-                <li>Complying with legal obligations</li>
+                <li>Complying with legal obligations under Nepali law</li>
               </ul>
             </section>
 
@@ -72,9 +73,9 @@ const PrivacyPolicy = () => {
                 We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                <li>With service providers who assist us in operating our business</li>
+                <li>With delivery service providers for order fulfillment</li>
+                <li>With payment processors (PhonePay, eSewa, Khalti)</li>
                 <li>When required by law or to protect our rights</li>
-                <li>In connection with a business transaction (merger, acquisition, etc.)</li>
                 <li>With your explicit consent</li>
               </ul>
             </section>
@@ -89,7 +90,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-light text-foreground mb-4">Your Rights and Choices</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Depending on your location, you may have certain rights regarding your personal information:
+                You have certain rights regarding your personal information:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
                 <li>Access to your personal information</li>
@@ -121,9 +122,9 @@ const PrivacyPolicy = () => {
                 If you have any questions about this Privacy Policy or our privacy practices, please contact us at:
               </p>
               <div className="mt-4 text-muted-foreground">
-                <p>Email: privacy@lineajewelry.com</p>
-                <p>Phone: +1 (212) 555-0123</p>
-                <p>Address: 123 Madison Avenue, New York, NY 10016</p>
+                <p>Email: privacy@dierashop.com</p>
+                <p>Phone: +977 (01) 555-0123</p>
+                <p>Address: Kathmandu, Nepal</p>
               </div>
             </section>
           </div>
