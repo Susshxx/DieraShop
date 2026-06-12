@@ -62,7 +62,7 @@ const Index = () => {
           <h2 className="text-xl sm:text-2xl mb-4 text-center">Shop by collection</h2>
           
           {/* Mobile: Horizontal scrollable circular icons */}
-          <div className="md:hidden overflow-x-auto scrollbar-hide">
+          <div className="md:hidden overflow-x-auto scrollbar-hide px-4">
             <div className="flex gap-2.5 pb-2">
               {cats.map((c) => (
                 <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
