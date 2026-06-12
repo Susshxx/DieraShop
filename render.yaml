@@ -15,6 +15,13 @@ services:
     buildCommand: npm run build
     staticPublishPath: ./dist
     rootDir: frontend
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
     routes:
       - type: rewrite
         source: /*
