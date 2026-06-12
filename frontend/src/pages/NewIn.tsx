@@ -137,10 +137,10 @@ const NewIn = () => {
                       />
                     )}
                   </div>
-                  <p className="text-[10px] sm:text-xs font-light mb-0.5 line-clamp-1">{p.name}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
+                  <p className="text-xs sm:text-sm font-light mb-0.5 line-clamp-1">{p.name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
                   {p.colors?.length > 0 && (
-                    <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                       {p.colors.length} {p.colors.length === 1 ? 'color' : 'colors'}
                     </p>
                   )}

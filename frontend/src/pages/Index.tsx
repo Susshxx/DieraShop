@@ -162,8 +162,8 @@ const Index = () => {
                       )}
                     </div>
                     <div className="space-y-0">
-                      <p className="text-[9px] sm:text-[10px] text-center line-clamp-1 leading-tight">{p.name}</p>
-                      <p className="text-[9px] sm:text-[10px] text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
+                      <p className="text-[10px] sm:text-xs text-center line-clamp-1 leading-tight">{p.name}</p>
+                      <p className="text-[10px] sm:text-xs text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
                     </div>
                   </Link>
                 ))}

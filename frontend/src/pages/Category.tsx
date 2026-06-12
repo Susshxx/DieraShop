@@ -125,8 +125,8 @@ const Category = () => {
                 {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
                 {p.images?.[0] && <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />}
               </div>
-              <p className="text-[10px] sm:text-xs line-clamp-1 mb-0.5">{p.name}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
+              <p className="text-xs sm:text-sm line-clamp-1 mb-0.5">{p.name}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
             </Link>
           ))}
           {currentItems.length === 0 && <p className="col-span-full text-muted-foreground text-xs py-6 text-center">No products yet.</p>}
