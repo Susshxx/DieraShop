@@ -58,15 +58,15 @@ const Index = () => {
         </section>
 
         {/* Categories */}
-        <section className="px-4 sm:px-6 pt-6 pb-4 sm:pt-10 sm:pb-6 max-w-7xl mx-auto">
-          <h2 className="text-xl sm:text-2xl mb-4 text-center">Shop by collection</h2>
+        <section className="pt-6 pb-4 sm:pt-10 sm:pb-6">
+          <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6">Shop by collection</h2>
           
           {/* Mobile: Horizontal scrollable circular icons */}
           <div className="md:hidden overflow-x-auto scrollbar-hide px-4">
-            <div className="flex gap-2.5 pb-2">
+            <div className="flex gap-2.5 pb-2 pt-2">
               {cats.map((c) => (
-                <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
-                  <div className="w-16 h-16 aspect-square overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
+                <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0">
+                  <div className="w-16 h-16 overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm flex items-center justify-center">
                     <EditableImage
                       slotKey={`home_collection_${c.slug}`}
                       defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
@@ -75,14 +75,14 @@ const Index = () => {
                       imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <p className="text-center text-[9px] font-medium line-clamp-2 leading-tight">{c.name}</p>
+                  <p className="text-center text-[9px] font-medium line-clamp-2 leading-tight w-16">{c.name}</p>
                 </Link>
               ))}
             </div>
           </div>
 
           {/* Desktop: Grid layout */}
-          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
+          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6 max-w-7xl mx-auto px-4 sm:px-6">
             {cats.map((c) => (
               <Link key={c.id} to={`/category/${c.slug}`} className="group block">
                 <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-3">
@@ -99,7 +99,7 @@ const Index = () => {
             ))}
           </div>
           
-          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm">Add categories in the admin to get started.</p>}
+          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm px-4">Add categories in the admin to get started.</p>}
         </section>
 
         {/* Mid-Page Banner - Full Width with no margins */}
