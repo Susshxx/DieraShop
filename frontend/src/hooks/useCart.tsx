@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useAuth } from "./useAuth";
 
 export interface CartItem {
   productId: string;
@@ -25,6 +26,7 @@ const Ctx = createContext<CartCtx | undefined>(undefined);
 const KEY = "diera-cart";
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { role, user } = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -38,24 +40,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(KEY, JSON.stringify(items));
   }, [items]);
 
-  // Listen for storage events to sync cart state (e.g., when logged out or admin logs in)
+  // Clear cart when user is not logged in or is an admin
   useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const storedItems = JSON.parse(localStorage.getItem(KEY) || "[]");
-        setItems(storedItems);
-      } catch {
-        setItems([]);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    if (!user || role === "admin") {
+      setItems([]);
+      localStorage.removeItem(KEY);
+    }
+  }, [user, role]);
 
   const keyOf = (id: string, size?: string, color?: string) => `${id}::${size ?? ""}::${color ?? ""}`;
 
   const add = (i: CartItem) => {
+    // Don't allow adding to cart if admin or not logged in
+    if (!user || role === "admin") {
+      return;
+    }
+    
     setItems((cur) => {
       const ix = cur.findIndex((c) => keyOf(c.productId, c.size, c.color) === keyOf(i.productId, i.size, i.color));
       if (ix >= 0) {
