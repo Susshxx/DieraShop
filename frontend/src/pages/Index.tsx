@@ -60,7 +60,29 @@ const Index = () => {
         {/* Categories */}
         <section className="px-4 sm:px-6 pt-8 pb-6 sm:pt-12 sm:pb-8 max-w-7xl mx-auto">
           <h2 className="text-2xl sm:text-3xl mb-6 text-center">Shop by collection</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
+          
+          {/* Mobile: Horizontal scrollable round small icons (5 visible at a time) */}
+          <div className="md:hidden overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 pb-2">
+              {cats.map((c) => (
+                <Link key={c.id} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-20">
+                  <div className="w-20 h-20 overflow-hidden rounded-full bg-muted mb-2 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm">
+                    <EditableImage
+                      slotKey={`home_collection_${c.slug}`}
+                      defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
+                      alt={c.name}
+                      className="block w-full h-full"
+                      imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  <p className="text-center text-[11px] font-medium line-clamp-2 leading-tight">{c.name}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: Grid layout */}
+          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
             {cats.map((c) => (
               <Link key={c.id} to={`/category/${c.slug}`} className="group block">
                 <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-3">
@@ -75,8 +97,9 @@ const Index = () => {
                 <p className="text-center text-sm font-medium">{c.name}</p>
               </Link>
             ))}
-            {cats.length === 0 && <p className="col-span-full text-center text-muted-foreground text-sm">Add categories in the admin to get started.</p>}
           </div>
+          
+          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm">Add categories in the admin to get started.</p>}
         </section>
 
         {/* Mid-Page Banner */}
@@ -124,11 +147,11 @@ const Index = () => {
         {featured.length > 0 && (
           <section className="pt-6 sm:pt-8 pb-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-2xl sm:text-3xl mb-6 sm:mb-8 text-center">Featured Products</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
+              <h2 className="text-2xl sm:text-3xl mb-4 sm:mb-6 text-center">Featured Products</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 sm:gap-4">
                 {featured.map((p) => (
                   <Link key={p.id} to={`/product/${p.slug}`} className="group">
-                    <div className="aspect-[3/4] bg-muted rounded-lg overflow-hidden mb-3 relative">
+                    <div className="aspect-[3/4] bg-muted rounded overflow-hidden mb-1.5 sm:mb-2 relative">
                       {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
                       {p.images?.[0] && (
                         <img 
@@ -139,8 +162,8 @@ const Index = () => {
                       )}
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-sm text-center line-clamp-1">{p.name}</p>
-                      <p className="text-sm text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
+                      <p className="text-[10px] sm:text-xs text-center line-clamp-1 leading-tight">{p.name}</p>
+                      <p className="text-[10px] sm:text-xs text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
                     </div>
                   </Link>
                 ))}
