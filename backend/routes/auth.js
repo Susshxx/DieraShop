@@ -72,6 +72,13 @@ router.get('/google/callback', (req, res, next) => {
   next();
 }, passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/auth/login?error=google` }), (req, res) => {
     const token = signToken(req.user);
+    const user = {
+      id: req.user._id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+    };
+    
     let afterLogin = '/account';
     try {
       const state = JSON.parse(Buffer.from(req.query.state || '', 'base64').toString());
@@ -80,21 +87,11 @@ router.get('/google/callback', (req, res, next) => {
       /* use default */
     }
     
-    // Set token as secure HTTP-only cookie
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined,
-    };
+    // Create a one-time auth code that can be exchanged for the token
+    const authCode = Buffer.from(JSON.stringify({ token, user, redirect: afterLogin })).toString('base64');
     
-    res.cookie('auth_token', token, cookieOptions);
-    res.cookie('auth_redirect', afterLogin, { ...cookieOptions, httpOnly: false });
-    
-    // Redirect to frontend callback page (no token in URL)
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?status=success`);
+    // Redirect with auth code (short-lived, one-time use)
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?code=${authCode}`);
   });
 
 router.post('/send-otp', async (req, res) => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { setToken, authApi, api } from "@/lib/api";
+import { setToken } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -11,51 +11,45 @@ const GoogleCallback = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const status = params.get("status");
+    const code = params.get("code");
+    const errorParam = params.get("error");
     
-    console.log("GoogleCallback - status:", status);
-    
-    if (status !== "success") {
-      console.error("GoogleCallback - Invalid status");
-      setError("Google sign-in was not completed successfully");
+    if (errorParam) {
+      setError("Google sign-in was cancelled or failed");
       toast.error("Google sign-in failed");
       setTimeout(() => nav("/auth/login", { replace: true }), 2000);
       return;
     }
     
-    console.log("GoogleCallback - Fetching auth from cookie");
+    if (!code) {
+      setError("No authentication code received");
+      toast.error("Authentication failed");
+      setTimeout(() => nav("/auth/login", { replace: true }), 2000);
+      return;
+    }
     
-    // Get token and user data from cookie
-    api.get("/auth/cookie-auth")
-      .then((response) => {
-        console.log("GoogleCallback - Cookie auth successful:", response);
-        const { token, user } = response;
-        
-        // Get redirect from cookie or default
-        const getCookie = (name: string) => {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop()?.split(';').shift();
-          return null;
-        };
-        
-        const redirect = getCookie('auth_redirect') || '/account';
-        
-        setToken(token);
-        setAuth(token, user);
-        toast.success(`Welcome ${user.name || 'to Diera Shop'}!`);
-        
-        // Clear the redirect cookie
-        document.cookie = 'auth_redirect=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        
-        nav(redirect, { replace: true });
-      })
-      .catch((error) => {
-        console.error("GoogleCallback - Cookie auth error:", error);
-        setError("Could not complete sign-in. Please try again.");
-        toast.error("Authentication failed");
-        setTimeout(() => nav("/auth/login", { replace: true }), 2000);
-      });
+    try {
+      // Decode the auth code
+      const decoded = JSON.parse(atob(code));
+      const { token, user, redirect } = decoded;
+      
+      if (!token || !user) {
+        throw new Error("Invalid auth data");
+      }
+      
+      // Store the token and user
+      setToken(token);
+      setAuth(token, user);
+      
+      toast.success(`Welcome ${user.name || 'to Diera Shop'}!`);
+      nav(redirect || '/account', { replace: true });
+      
+    } catch (error) {
+      console.error("GoogleCallback - Decode error:", error);
+      setError("Could not complete sign-in. Please try again.");
+      toast.error("Authentication failed");
+      setTimeout(() => nav("/auth/login", { replace: true }), 2000);
+    }
   }, [params, nav, setAuth]);
 
   return (
