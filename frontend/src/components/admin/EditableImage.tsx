@@ -137,7 +137,9 @@ const EditableImage = ({ slotKey, defaultSrc, alt = "", className = "", imgClass
                 <DialogTitle className="text-sm">Edit · {slotKey}</DialogTitle>
               </DialogHeader>
               <div className="space-y-2">
-                <img src={preview} alt="" className="w-full max-h-24 object-contain rounded bg-muted" />
+                <div className="w-full h-20 bg-muted rounded flex items-center justify-center overflow-hidden">
+                  <img src={preview} alt="" className="max-w-full max-h-full object-contain" />
+                </div>
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => { e.preventDefault(); setFile(e.dataTransfer.files?.[0] || null); setDraftUrl(""); }}
