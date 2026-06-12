@@ -2,7 +2,7 @@ services:
   - type: web
     name: dierashop-backend
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && npm run seed
     startCommand: npm start
     rootDir: backend
     envVars:
