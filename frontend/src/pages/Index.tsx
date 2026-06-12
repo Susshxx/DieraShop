@@ -57,12 +57,12 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Categories - Full Width */}
-        <section className="pt-6 pb-4 sm:pt-10 sm:pb-6">
-          <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6">Shop by collection</h2>
+        {/* Categories */}
+        <section className="px-4 sm:px-6 pt-6 pb-4 sm:pt-10 sm:pb-6 max-w-7xl mx-auto">
+          <h2 className="text-xl sm:text-2xl mb-4 text-center">Shop by collection</h2>
           
-          {/* Mobile: Horizontal scrollable circular icons - Full Width */}
-          <div className="md:hidden overflow-x-auto scrollbar-hide px-4">
+          {/* Mobile: Horizontal scrollable circular icons */}
+          <div className="md:hidden overflow-x-auto scrollbar-hide">
             <div className="flex gap-2.5 pb-2">
               {cats.map((c) => (
                 <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0 w-16">
@@ -82,7 +82,7 @@ const Index = () => {
           </div>
 
           {/* Desktop: Grid layout */}
-          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6 px-4 sm:px-6 max-w-7xl mx-auto">
+          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
             {cats.map((c) => (
               <Link key={c.id} to={`/category/${c.slug}`} className="group block">
                 <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-3">
@@ -99,31 +99,31 @@ const Index = () => {
             ))}
           </div>
           
-          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm px-4">Add categories in the admin to get started.</p>}
+          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm">Add categories in the admin to get started.</p>}
         </section>
 
-        {/* Mid-Page Banner - Full Width, Full Height */}
-        <section className="relative w-full">
+        {/* Mid-Page Banner - Full Width with no margins */}
+        <section className="relative w-full mt-6 sm:mt-8">
           <div className="w-full">
-            {/* Mobile: Single image with hover overlay */}
+            {/* Mobile: Single image with quality text overlay - Full width */}
             <div className="relative overflow-hidden group md:hidden">
               <EditableImage
                 slotKey="home_mid_banner_right"
                 defaultSrc={heroDefault}
                 alt="Featured collection"
                 className="block"
-                imgClassName="w-full h-[35vh] object-cover"
+                imgClassName="w-full h-[40vh] object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center px-6 text-center">
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center px-6 text-center">
                 <h3 className="text-white text-2xl mb-3 italic" style={{ fontFamily: 'Playball, cursive' }}>
                   Quality Craftsmanship
                 </h3>
-                <p className="text-white/95 text-sm mb-4 max-w-md leading-relaxed">
+                <p className="text-white/90 text-sm mb-4 max-w-md leading-relaxed">
                   Every piece is thoughtfully crafted with premium fabrics and sustainable practices. Experience clothing that lasts, made with care for you and the planet.
                 </p>
                 <Link 
                   to="/about/sustainability" 
-                  className="inline-block bg-white/95 text-black px-6 py-2.5 rounded hover:bg-white transition text-sm font-medium"
+                  className="inline-block bg-white text-black px-6 py-2.5 rounded hover:bg-white/90 transition text-sm font-medium"
                 >
                   Our Commitment
                 </Link>
@@ -131,7 +131,7 @@ const Index = () => {
             </div>
             
             {/* Desktop: Two images - Full width, no gaps */}
-            <div className="hidden md:grid grid-cols-3 gap-0">
+            <div className="hidden md:grid grid-cols-3">
               {/* Left Image - 1/3 width */}
               <div className="relative overflow-hidden group">
                 <EditableImage
@@ -139,7 +139,7 @@ const Index = () => {
                   defaultSrc={heroDefault}
                   alt="Collection highlight"
                   className="block"
-                  imgClassName="w-full h-[60vh] lg:h-[70vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
               
@@ -150,7 +150,7 @@ const Index = () => {
                   defaultSrc={heroDefault}
                   alt="Featured collection"
                   className="block"
-                  imgClassName="w-full h-[60vh] lg:h-[70vh] object-cover group-hover:scale-105 transition-transform duration-700"
+                  imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
             </div>
