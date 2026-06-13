@@ -21,7 +21,7 @@ const OurStory = () => {
           
           <ContentSection>
             <ImageTextBlock
-              image="Dieraimg.png"
+              image="\src\assets\founders.png"
               imageAlt="Diera Shop"
               title="Founded on Passion"
               content="Diera Shop was born from a deep love for Nepal's rich textile heritage and contemporary fashion. We started with a simple mission: to bring high-quality, handpicked clothing from Nepal to fashion enthusiasts who appreciate authenticity, quality, and cultural craftsmanship in every thread."
