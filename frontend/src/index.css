@@ -7,13 +7,13 @@
 @layer base {
   :root,
   :root[data-theme="pink"] {
-    --background: 350 60% 99%;
+    --background: 350 80% 96%;
     --foreground: 340 25% 15%;
 
     --status-bar: 340 35% 25%;
     --status-bar-foreground: 350 60% 99%;
 
-    --nav-background: 350 60% 99%;
+    --nav-background: 350 80% 96%;
     --nav-foreground: 340 25% 20%;
     --nav-hover: 340 60% 35%;
 
@@ -21,23 +21,23 @@
     --primary-foreground: 0 0% 100%;
     --primary-hover: 340 55% 45%;
 
-    --secondary: 345 60% 96%;
+    --secondary: 345 60% 92%;
     --secondary-foreground: 340 30% 20%;
 
-    --muted: 345 40% 95%;
+    --muted: 345 40% 91%;
     --muted-foreground: 340 10% 45%;
 
-    --accent: 340 70% 92%;
+    --accent: 340 70% 88%;
     --accent-foreground: 340 40% 25%;
 
-    --border: 340 30% 90%;
-    --input: 340 30% 90%;
+    --border: 340 30% 86%;
+    --input: 340 30% 86%;
     --ring: 340 55% 55%;
 
-    --card: 0 0% 100%;
+    --card: 350 80% 98%;
     --card-foreground: 340 25% 15%;
 
-    --popover: 0 0% 100%;
+    --popover: 350 80% 98%;
     --popover-foreground: 340 25% 15%;
 
     --destructive: 0 75% 55%;
@@ -48,79 +48,97 @@
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-background: 345 60% 97%;
+    --sidebar-background: 345 60% 93%;
     --sidebar-foreground: 340 25% 25%;
     --sidebar-primary: 340 55% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 340 50% 93%;
+    --sidebar-accent: 340 50% 89%;
     --sidebar-accent-foreground: 340 35% 25%;
-    --sidebar-border: 340 30% 90%;
+    --sidebar-border: 340 30% 86%;
     --sidebar-ring: 340 55% 55%;
   }
 
   :root[data-theme="rose"] {
-    --background: 20 30% 97%;
+    --background: 20 50% 94%;
     --foreground: 340 20% 18%;
     --primary: 350 45% 50%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 350 45% 42%;
-    --secondary: 20 35% 92%;
+    --secondary: 20 40% 88%;
     --secondary-foreground: 340 25% 22%;
-    --muted: 20 25% 92%;
+    --muted: 20 30% 88%;
     --muted-foreground: 340 10% 45%;
-    --accent: 350 35% 88%;
+    --accent: 350 35% 84%;
     --accent-foreground: 340 35% 25%;
-    --border: 20 25% 88%;
-    --input: 20 25% 88%;
+    --border: 20 30% 84%;
+    --input: 20 30% 84%;
     --ring: 350 45% 50%;
-    --nav-background: 20 30% 97%;
+    --card: 20 50% 97%;
+    --card-foreground: 340 20% 18%;
+    --popover: 20 50% 97%;
+    --popover-foreground: 340 20% 18%;
+    --nav-background: 20 50% 94%;
     --nav-foreground: 340 25% 20%;
     --nav-hover: 350 50% 30%;
   }
 
   :root[data-theme="sage"] {
-    --background: 40 30% 97%;
+    --background: 100 25% 93%;
     --foreground: 150 15% 18%;
     --primary: 150 25% 40%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 150 25% 32%;
-    --secondary: 40 30% 93%;
+    --secondary: 100 20% 88%;
     --secondary-foreground: 150 15% 22%;
-    --muted: 40 20% 92%;
+    --muted: 100 15% 87%;
     --muted-foreground: 150 8% 40%;
-    --accent: 150 20% 88%;
+    --accent: 150 20% 84%;
     --accent-foreground: 150 25% 25%;
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
+    --border: 100 15% 83%;
+    --input: 100 15% 83%;
     --ring: 150 25% 40%;
-    --nav-background: 40 30% 97%;
+    --card: 100 25% 96%;
+    --card-foreground: 150 15% 18%;
+    --popover: 100 25% 96%;
+    --popover-foreground: 150 15% 18%;
+    --nav-background: 100 25% 93%;
     --nav-foreground: 150 15% 20%;
     --nav-hover: 150 25% 25%;
   }
 
-  :root[data-theme="dark"] {
-    --background: 340 15% 10%;
-    --foreground: 340 20% 95%;
-    --primary: 340 60% 60%;
-    --primary-foreground: 340 15% 10%;
-    --primary-hover: 340 60% 70%;
-    --secondary: 340 10% 18%;
-    --secondary-foreground: 340 20% 90%;
-    --muted: 340 10% 18%;
-    --muted-foreground: 340 10% 65%;
-    --accent: 340 15% 22%;
-    --accent-foreground: 340 20% 95%;
-    --border: 340 10% 22%;
-    --input: 340 10% 22%;
-    --ring: 340 60% 60%;
-    --card: 340 15% 12%;
-    --card-foreground: 340 20% 95%;
-    --popover: 340 15% 12%;
-    --popover-foreground: 340 20% 95%;
-    --nav-background: 340 15% 10%;
-    --nav-foreground: 340 20% 90%;
-    --nav-hover: 340 60% 70%;
+  /* Golden Glow — #fdf8e1 base (lightened) */
+  :root[data-theme="golden"] {
+    --background: 49 75% 97%;
+    --foreground: 38 40% 18%;
+    --primary: 38 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 38 85% 36%;
+    --secondary: 48 65% 93%;
+    --secondary-foreground: 38 35% 20%;
+    --muted: 47 55% 91%;
+    --muted-foreground: 38 20% 42%;
+    --accent: 44 60% 86%;
+    --accent-foreground: 38 40% 22%;
+    --border: 44 40% 86%;
+    --input: 44 40% 86%;
+    --ring: 38 85% 45%;
+    --card: 49 75% 99%;
+    --card-foreground: 38 40% 18%;
+    --popover: 49 75% 99%;
+    --popover-foreground: 38 40% 18%;
+    --nav-background: 49 75% 97%;
+    --nav-foreground: 38 40% 22%;
+    --nav-hover: 38 85% 35%;
+    --sidebar-background: 48 65% 94%;
+    --sidebar-foreground: 38 35% 22%;
+    --sidebar-primary: 38 85% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 44 60% 89%;
+    --sidebar-accent-foreground: 38 40% 22%;
+    --sidebar-border: 44 40% 86%;
+    --sidebar-ring: 38 85% 45%;
   }
+
 }
 
 @layer base {

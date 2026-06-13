@@ -6,7 +6,14 @@ const LABELS: Record<Theme, string> = {
   pink: "Light Pink",
   rose: "Dusty Rose",
   sage: "Sage Cream",
-  dark: "Dark",
+  golden: "Golden Glow",
+};
+
+const SWATCHES: Record<Theme, string> = {
+  pink: "#f5c6d8",
+  rose: "#e8c8b8",
+  sage: "#c8dbc0",
+  golden: "#fdf8e1",
 };
 
 const ThemeSwitcher = () => {
@@ -18,7 +25,8 @@ const ThemeSwitcher = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {themes.map((t) => (
-          <DropdownMenuItem key={t} onClick={() => setTheme(t)} className={t === theme ? "font-semibold" : ""}>
+          <DropdownMenuItem key={t} onClick={() => setTheme(t)} className={`flex items-center gap-2 ${t === theme ? "font-semibold" : ""}`}>
+            <span className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0" style={{ backgroundColor: SWATCHES[t] }} />
             {LABELS[t]}
           </DropdownMenuItem>
         ))}

@@ -50,16 +50,16 @@ const Index = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent flex items-end">
             <div className="px-6 sm:px-12 pb-8 sm:pb-12 max-w-2xl">
-              <h1 className="text-3xl sm:text-5xl text-foreground mb-3">Diera Shop</h1>
-              <p className="text-sm sm:text-base text-foreground/80 mb-4">Handpicked clothes from Nepal — soft, modern, made for everyday grace.</p>
+              <h1 className="text-3xl sm:text-5xl mb-3" style={{ color: '#000000' }}>Diera Shop</h1>
+              <p className="text-sm sm:text-base mb-4" style={{ color: '#000000' }}>Handpicked clothes from Nepal — soft, modern, made for everyday grace.</p>
               <Link to="/category/new-in" className="inline-block bg-primary text-primary-foreground px-5 py-2.5 rounded hover:opacity-90 transition text-sm sm:text-base">Shop new arrivals</Link>
             </div>
           </div>
         </section>
 
         {/* Categories */}
-        <section className="pt-6 pb-4 sm:pt-10 sm:pb-6">
-          <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6">Shop by collection</h2>
+        <section className="pt-6 pb-4 sm:pt-10 sm:pb-6 bg-background">
+          <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6 text-primary">Shop by collection</h2>
           
           {/* Mobile: Horizontal scrollable circular icons */}
           <div className="md:hidden overflow-x-auto scrollbar-hide px-4">
@@ -106,7 +106,7 @@ const Index = () => {
         <section className="relative w-full mt-6 sm:mt-8">
           <div className="w-full">
             {/* Mobile: Single image with quality text overlay - Full width */}
-            <div className="relative overflow-hidden group md:hidden">
+            <div className="relative overflow-hidden md:rounded-lg group md:hidden">
               <EditableImage
                 slotKey="home_mid_banner_right"
                 defaultSrc={heroDefault}
@@ -134,7 +134,7 @@ const Index = () => {
             <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6">
               <div className="grid grid-cols-3 gap-4 sm:gap-6">
                 {/* Left Image - 1/3 width */}
-                <div className="relative overflow-hidden group">
+                <div className="relative overflow-hidden rounded-lg group">
                   <EditableImage
                     slotKey="home_mid_banner_left"
                     defaultSrc={heroDefault}
@@ -145,7 +145,7 @@ const Index = () => {
                 </div>
                 
                 {/* Right Image - 2/3 width */}
-                <div className="relative col-span-2 overflow-hidden group">
+                <div className="relative col-span-2 overflow-hidden rounded-lg group">
                   <EditableImage
                     slotKey="home_mid_banner_right"
                     defaultSrc={heroDefault}
@@ -163,7 +163,7 @@ const Index = () => {
         {featured.length > 0 && (
           <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center">Featured Products</h2>
+              <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1.5 sm:gap-3">
                 {featured.map((p) => (
                   <Link key={p.id} to={`/product/${p.slug}`} className="group">

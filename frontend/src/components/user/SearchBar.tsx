@@ -85,9 +85,9 @@ const SearchBar = () => {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] bg-black/20 dark:bg-black/40" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[100] backdrop-blur-sm bg-black/30" onClick={() => setOpen(false)}>
           <div className="max-w-2xl mx-auto mt-20 px-4" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={submit} className="flex items-center gap-2 bg-background border-b-2 border-primary pb-2 px-2 rounded-t-lg">
+            <form onSubmit={submit} className="flex items-center gap-2 bg-background/80 backdrop-blur-md border-b-2 border-primary pb-2 px-2 rounded-t-lg">
               <Search className="w-5 h-5 text-muted-foreground" />
               <input
                 ref={inputRef}
@@ -99,7 +99,7 @@ const SearchBar = () => {
               <button type="button" onClick={() => setOpen(false)} className="p-1"><X className="w-5 h-5" /></button>
             </form>
 
-            <div className="mt-0 bg-card rounded-b-lg border border-border max-h-[60vh] overflow-y-auto shadow-xl">
+            <div className="mt-0 bg-card/80 backdrop-blur-md rounded-b-lg border border-border max-h-[60vh] overflow-y-auto shadow-xl">
               {loading && <div className="p-6 text-sm text-muted-foreground">Searching…</div>}
               {!loading && q && results.length === 0 && categories.length === 0 && (
                 <div className="p-6 text-sm text-muted-foreground">No products or categories found for "{q}"</div>

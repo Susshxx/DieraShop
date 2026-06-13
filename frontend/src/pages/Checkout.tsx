@@ -148,8 +148,8 @@ const Checkout = () => {
             <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required /></div>
 
             {/* Shipping Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-              <p className="text-sm text-blue-900">
+            <div className="rounded-lg p-3 mt-2" style={{ backgroundColor: '#c9e4de', borderColor: '#b0d4cc', borderWidth: '1px' }}>
+              <p className="text-sm" style={{ color: '#2d5449' }}>
                 <span className="font-semibold">📦 Shipping Information:</span> Shipping fare is to be paid to the delivery person at the time of delivery.
               </p>
             </div>

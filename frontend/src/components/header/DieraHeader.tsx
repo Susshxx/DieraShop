@@ -6,8 +6,9 @@ import NotificationBell from "@/components/user/NotificationBell";
 import ThemeSwitcher from "@/components/user/ThemeSwitcher";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Menu } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, Home, Sparkles, Info, Palette, User, Package, MessageSquare, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import {
   Sheet,
   SheetContent,
@@ -16,10 +17,27 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+const THEME_LABELS = {
+  pink: "Light Pink",
+  rose: "Dusty Rose",
+  sage: "Sage Cream",
+  golden: "Golden Glow",
+};
+
+const THEME_SWATCHES = {
+  pink: "#f5c6d8",
+  rose: "#e8c8b8",
+  sage: "#c8dbc0",
+  golden: "#fdf8e1",
+};
+
 const DieraHeader = () => {
   const { user } = useAuth();
+  const { theme, setTheme, themes } = useTheme();
   const [cats, setCats] = useState<{ name: string; slug: string; showInHeader?: boolean }[]>([]);
   const [open, setOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
 
   useEffect(() => {
     api.get<{ name: string; slug: string; showInHeader?: boolean }[]>("/categories")
@@ -42,39 +60,184 @@ const DieraHeader = () => {
                 <Menu className="w-5 h-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[50vw] sm:w-[300px]">
+            <SheetContent side="left" className="w-[280px] overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-4 mt-6">
+              <nav className="flex flex-col gap-1 mt-6">
+                {/* New In */}
                 <Link 
                   to="/category/new-in" 
                   onClick={() => setOpen(false)} 
-                  className="text-nav-foreground hover:text-nav-hover font-medium"
+                  className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded font-medium"
                 >
-                  New In
+                  <Sparkles className="w-4 h-4" />
+                  <span>New In</span>
                 </Link>
-                {cats.map((c) => (
-                  <Link 
-                    key={c.slug} 
-                    to={`/category/${c.slug}`} 
-                    onClick={() => setOpen(false)} 
-                    className="text-nav-foreground hover:text-nav-hover"
+                
+                {/* Categories Collapsible */}
+                <div>
+                  <button
+                    onClick={() => setCategoriesOpen(!categoriesOpen)}
+                    className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                   >
-                    {c.name}
-                  </Link>
-                ))}
+                    <div className="flex items-center gap-3">
+                      <Package className="w-4 h-4" />
+                      <span>Categories</span>
+                    </div>
+                    {categoriesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {categoriesOpen && (
+                    <div className="ml-7 mt-1 space-y-1">
+                      {cats.map((c) => (
+                        <Link 
+                          key={c.slug} 
+                          to={`/category/${c.slug}`} 
+                          onClick={() => setOpen(false)} 
+                          className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
+                        >
+                          {c.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* About */}
                 <Link 
                   to="/about/our-story" 
                   onClick={() => setOpen(false)} 
-                  className="text-nav-foreground hover:text-nav-hover"
+                  className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                 >
-                  About
+                  <Info className="w-4 h-4" />
+                  <span>About</span>
                 </Link>
+                
+                {/* Divider */}
+                <div className="border-t border-border my-3"></div>
+                
+                {/* Theme Collapsible */}
+                <div>
+                  <button
+                    onClick={() => setThemeOpen(!themeOpen)}
+                    className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Palette className="w-4 h-4" />
+                      <span>Theme</span>
+                    </div>
+                    {themeOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {themeOpen && (
+                    <div className="ml-7 mt-1 space-y-1">
+                      {themes.map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTheme(t)}
+                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-muted ${
+                            t === theme ? "text-foreground font-semibold" : "text-muted-foreground"
+                          }`}
+                        >
+                          <span 
+                            className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0" 
+                            style={{ backgroundColor: THEME_SWATCHES[t as keyof typeof THEME_SWATCHES] }}
+                          />
+                          {THEME_LABELS[t as keyof typeof THEME_LABELS]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* User Menu Items - Only show when logged in */}
+                {user && (
+                  <>
+                    <div className="border-t border-border my-3"></div>
+                    <Link 
+                      to={user.role === 'admin' ? '/admin/dashboard' : '/account/orders'} 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <Package className="w-4 h-4" />
+                      <span>{user.role === 'admin' ? 'Dashboard' : 'My Orders'}</span>
+                    </Link>
+                    {user.role === 'admin' ? (
+                      <>
+                        <Link 
+                          to="/admin/products" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span>Products</span>
+                        </Link>
+                        <Link 
+                          to="/admin/orders" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span>Orders</span>
+                        </Link>
+                        <Link 
+                          to="/admin/chats" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          <span>Chats</span>
+                        </Link>
+                        <Link 
+                          to="/admin/categories" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Categories</span>
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link 
+                          to="/account/chat" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          <span>Chat</span>
+                        </Link>
+                        <Link 
+                          to="/account/profile" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </>
+                    )}
+                    
+                    {/* Sign Out at bottom */}
+                    <div className="flex-1 min-h-[20px]"></div>
+                    <div className="border-t border-border mt-4 pt-3">
+                      <button
+                        onClick={() => {
+                          setOpen(false);
+                          localStorage.removeItem('token');
+                          window.location.href = '/login';
+                        }}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
-          <Link to="/" className="text-xl tracking-wider whitespace-nowrap" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <Link to="/" className="text-xl tracking-wider whitespace-nowrap text-primary" style={{ fontFamily: "'Playfair Display', serif" }}>
             Diera.Shop
           </Link>
         </div>
@@ -89,16 +252,30 @@ const DieraHeader = () => {
         </nav>
 
         {/* Desktop: Centered logo */}
-        <Link to="/" className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-2xl tracking-wider" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <Link to="/" className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-2xl tracking-wider text-primary" style={{ fontFamily: "'Playfair Display', serif" }}>
           Diera.Shop
         </Link>
 
         {/* Right side icons */}
         <div className="flex items-center ml-4">
           <SearchBar />
-          <ThemeSwitcher />
-          {user?.role !== 'admin' && <NotificationBell />}
-          <UserMenu />
+          {/* Desktop: Theme and User Menu */}
+          <div className="hidden lg:flex items-center">
+            <ThemeSwitcher />
+            {user?.role !== 'admin' && <NotificationBell />}
+            <UserMenu />
+          </div>
+          {/* Mobile: User icon when logged in, Login link when not logged in */}
+          {user ? (
+            <button className="lg:hidden p-2" aria-label="User" onClick={() => setOpen(true)}>
+              <User className="w-5 h-5" />
+            </button>
+          ) : (
+            <Link to="/auth/login" className="lg:hidden p-2" aria-label="Login">
+              <User className="w-5 h-5" />
+            </Link>
+          )}
+          {/* Cart on all screens */}
           <CartDrawer />
         </div>
       </div>

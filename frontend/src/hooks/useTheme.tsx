@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type Theme = "pink" | "rose" | "sage" | "dark";
-const THEMES: Theme[] = ["pink", "rose", "sage", "dark"];
+export type Theme = "pink" | "rose" | "sage" | "golden";
+const THEMES: Theme[] = ["pink", "rose", "sage", "golden"];
 
 interface ThemeCtx {
   theme: Theme;
