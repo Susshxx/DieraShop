@@ -38,7 +38,7 @@ const UserMenu = () => {
           </>
         )}
         {role !== "admin" && <DropdownMenuSeparator />}
-        <DropdownMenuItem onClick={async () => { await signOut(); nav("/"); }}><LogOut className="w-4 h-4 mr-2" /> Sign out</DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => { await signOut(); nav("/auth/login"); }}><LogOut className="w-4 h-4 mr-2" /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

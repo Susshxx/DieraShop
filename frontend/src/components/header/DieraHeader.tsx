@@ -6,7 +6,7 @@ import NotificationBell from "@/components/user/NotificationBell";
 import ThemeSwitcher from "@/components/user/ThemeSwitcher";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Menu, ChevronDown, ChevronUp, Home, Sparkles, Info, Palette, User, Package, MessageSquare, Settings, LogOut } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -210,51 +210,7 @@ const DieraHeader = () => {
                   </div>
                 )}
                 
-                {user && user.role === 'admin' && (
-                  // Admin: Show menu items directly (no collapsible User section)
-                  <>
-                    <Link 
-                      to="/admin/dashboard" 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <Package className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                    <Link 
-                      to="/admin/products" 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <Package className="w-4 h-4" />
-                      <span>Products</span>
-                    </Link>
-                    <Link 
-                      to="/admin/orders" 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <Package className="w-4 h-4" />
-                      <span>Orders</span>
-                    </Link>
-                    <Link 
-                      to="/admin/chats" 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Chats</span>
-                    </Link>
-                    <Link 
-                      to="/admin/categories" 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Categories</span>
-                    </Link>
-                  </>
-                )}
+
                 
                 {user && (
                   <>
@@ -262,7 +218,7 @@ const DieraHeader = () => {
                     <div className="flex-1 min-h-[20px]"></div>
                     <div className="border-t border-border mt-4 pt-3">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setOpen(false);
                           localStorage.removeItem('token');
                           window.location.href = '/auth/login';

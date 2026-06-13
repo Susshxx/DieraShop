@@ -17,7 +17,35 @@ const Index = () => {
   const [cats, setCats] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get<any[]>("/products?featured=true&limit=8").then(setFeatured).catch(() => {});
+    // Try to load featured products from localStorage first
+    const cachedFeatured = localStorage.getItem('diera-featured-products');
+    if (cachedFeatured) {
+      try {
+        const parsed = JSON.parse(cachedFeatured);
+        setFeatured(parsed);
+      } catch (e) {
+        console.error('Failed to parse cached featured products');
+      }
+    }
+    
+    // Fetch from API and update cache
+    api.get<any[]>("/products?featured=true&limit=8").then((data) => {
+      localStorage.setItem('diera-featured-products', JSON.stringify(data));
+      setFeatured(data);
+    }).catch(() => {});
+    
+    // Try to load categories from localStorage first
+    const cachedCats = localStorage.getItem('diera-categories-with-images');
+    if (cachedCats) {
+      try {
+        const parsed = JSON.parse(cachedCats);
+        setCats(parsed);
+      } catch (e) {
+        console.error('Failed to parse cached categories');
+      }
+    }
+    
+    // Fetch from API and update cache
     api.get<any[]>("/categories").then((data) => {
       // Fetch category images for ALL categories (no limit)
       const catsWithImages = data.map(async (cat) => {
@@ -31,7 +59,10 @@ const Index = () => {
           return cat;
         }
       });
-      Promise.all(catsWithImages).then(setCats);
+      Promise.all(catsWithImages).then((catsData) => {
+        localStorage.setItem('diera-categories-with-images', JSON.stringify(catsData));
+        setCats(catsData);
+      });
     }).catch(() => {});
   }, []);
 
