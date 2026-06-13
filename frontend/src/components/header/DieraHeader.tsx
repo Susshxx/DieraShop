@@ -212,7 +212,7 @@ const DieraHeader = () => {
                 
 
                 
-                {user && (
+                {user && user.role !== 'admin' && (
                   <>
                     {/* Sign Out - Separate at bottom */}
                     <div className="flex-1 min-h-[20px]"></div>
