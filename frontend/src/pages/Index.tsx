@@ -82,7 +82,7 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent flex items-end">
             <div className="px-6 sm:px-12 pb-8 sm:pb-12 max-w-2xl">
               <h1 className="text-3xl sm:text-5xl mb-3" style={{ color: '#000000' }}>Diera Shop</h1>
-              <p className="text-sm sm:text-base mb-4" style={{ color: '#000000' }}>Handpicked clothes from Nepal — soft, modern, made for everyday grace.</p>
+              <p className="text-sm sm:text-base mb-4" style={{ color: '#000000' }}>Handpicked clothes from Nepal - soft, modern, made for everyday grace.</p>
               <Link to="/category/new-in" className="inline-block bg-primary text-primary-foreground px-5 py-2.5 rounded hover:opacity-90 transition text-sm sm:text-base">Shop new arrivals</Link>
             </div>
           </div>

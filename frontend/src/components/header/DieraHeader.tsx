@@ -258,7 +258,7 @@ const DieraHeader = () => {
         </Link>
 
         {/* Right side icons */}
-        <div className="flex items-center ml-4">
+        <div className="flex items-center gap-1 ml-4">
           <SearchBar />
           {/* Desktop: Theme and User Menu */}
           <div className="hidden lg:flex items-center">

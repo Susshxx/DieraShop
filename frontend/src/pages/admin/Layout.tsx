@@ -160,7 +160,7 @@ const AdminLayout = () => {
                     </NavLink>
                   ))}
                 </nav>
-                <div className="p-2 border-t border-border space-y-1">
+                <div className="p-2 pb-8 border-t border-border space-y-1">
                   <Link 
                     to="/" 
                     onClick={() => setMenuOpen(false)}
