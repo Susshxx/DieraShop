@@ -38,10 +38,26 @@ const DieraHeader = () => {
   const [open, setOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
+    // Try to load from localStorage first
+    const cached = localStorage.getItem('diera-categories');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const headerCats = parsed.filter((c: any) => c.showInHeader !== false).slice(0, 5);
+        setCats(headerCats);
+      } catch (e) {
+        console.error('Failed to parse cached categories');
+      }
+    }
+    
+    // Fetch from API and update cache
     api.get<{ name: string; slug: string; showInHeader?: boolean }[]>("/categories")
       .then((data) => {
+        // Save to localStorage
+        localStorage.setItem('diera-categories', JSON.stringify(data));
         // Filter categories where showInHeader is true, limit to 5
         const headerCats = data.filter(c => c.showInHeader !== false).slice(0, 5);
         setCats(headerCats);
@@ -149,59 +165,34 @@ const DieraHeader = () => {
                   )}
                 </div>
                 
-                {/* User Menu Items - Only show when logged in */}
-                {user && (
-                  <>
-                    <div className="border-t border-border my-3"></div>
-                    <Link 
-                      to={user.role === 'admin' ? '/admin/dashboard' : '/account/orders'} 
-                      onClick={() => setOpen(false)} 
-                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                {/* User/Admin Section - Only show when logged in */}
+                {user && user.role !== 'admin' && (
+                  // Regular user: Show collapsible User section
+                  <div>
+                    <button
+                      onClick={() => setUserOpen(!userOpen)}
+                      className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                     >
-                      <Package className="w-4 h-4" />
-                      <span>{user.role === 'admin' ? 'Dashboard' : 'My Orders'}</span>
-                    </Link>
-                    {user.role === 'admin' ? (
-                      <>
+                      <div className="flex items-center gap-3">
+                        <User className="w-4 h-4" />
+                        <span>User</span>
+                      </div>
+                      {userOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {userOpen && (
+                      <div className="ml-7 mt-1 space-y-1">
                         <Link 
-                          to="/admin/products" 
+                          to="/account/orders" 
                           onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <Package className="w-4 h-4" />
-                          <span>Products</span>
+                          <span>My Orders</span>
                         </Link>
-                        <Link 
-                          to="/admin/orders" 
-                          onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                        >
-                          <Package className="w-4 h-4" />
-                          <span>Orders</span>
-                        </Link>
-                        <Link 
-                          to="/admin/chats" 
-                          onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          <span>Chats</span>
-                        </Link>
-                        <Link 
-                          to="/admin/categories" 
-                          onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                        >
-                          <Settings className="w-4 h-4" />
-                          <span>Categories</span>
-                        </Link>
-                      </>
-                    ) : (
-                      <>
                         <Link 
                           to="/account/chat" 
                           onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <MessageSquare className="w-4 h-4" />
                           <span>Chat</span>
@@ -209,22 +200,72 @@ const DieraHeader = () => {
                         <Link 
                           to="/account/profile" 
                           onClick={() => setOpen(false)} 
-                          className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <User className="w-4 h-4" />
                           <span>Profile</span>
                         </Link>
-                      </>
+                      </div>
                     )}
-                    
-                    {/* Sign Out at bottom */}
+                  </div>
+                )}
+                
+                {user && user.role === 'admin' && (
+                  // Admin: Show menu items directly (no collapsible User section)
+                  <>
+                    <Link 
+                      to="/admin/dashboard" 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <Package className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link 
+                      to="/admin/products" 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <Package className="w-4 h-4" />
+                      <span>Products</span>
+                    </Link>
+                    <Link 
+                      to="/admin/orders" 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <Package className="w-4 h-4" />
+                      <span>Orders</span>
+                    </Link>
+                    <Link 
+                      to="/admin/chats" 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Chats</span>
+                    </Link>
+                    <Link 
+                      to="/admin/categories" 
+                      onClick={() => setOpen(false)} 
+                      className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Categories</span>
+                    </Link>
+                  </>
+                )}
+                
+                {user && (
+                  <>
+                    {/* Sign Out - Separate at bottom */}
                     <div className="flex-1 min-h-[20px]"></div>
                     <div className="border-t border-border mt-4 pt-3">
                       <button
                         onClick={() => {
                           setOpen(false);
                           localStorage.removeItem('token');
-                          window.location.href = '/login';
+                          window.location.href = '/auth/login';
                         }}
                         className="flex items-center gap-3 w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                       >
@@ -265,12 +306,21 @@ const DieraHeader = () => {
             {user?.role !== 'admin' && <NotificationBell />}
             <UserMenu />
           </div>
-          {/* Mobile: User icon when logged in, Login link when not logged in */}
+          {/* Mobile: Show appropriate icon based on user role */}
           {user ? (
-            <button className="lg:hidden p-2" aria-label="User" onClick={() => setOpen(true)}>
-              <User className="w-5 h-5" />
-            </button>
+            user.role === 'admin' ? (
+              // Admin: Show UserMenu (old behavior)
+              <div className="lg:hidden">
+                <UserMenu />
+              </div>
+            ) : (
+              // Regular user: Show notification bell
+              <div className="lg:hidden">
+                <NotificationBell />
+              </div>
+            )
           ) : (
+            // Not logged in: Show login link
             <Link to="/auth/login" className="lg:hidden p-2" aria-label="Login">
               <User className="w-5 h-5" />
             </Link>
