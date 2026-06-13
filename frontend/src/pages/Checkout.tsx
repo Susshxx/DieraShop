@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Upload, X, ZoomIn } from "lucide-react";
+import { Upload, X, ZoomIn, Download } from "lucide-react";
 
 const schema = z.object({
   full_name: z.string().trim().min(2).max(80),
@@ -306,6 +306,14 @@ const Checkout = () => {
               <p className="text-sm font-semibold mt-2">
                 Amount: {formatNPR(total)}
               </p>
+              <a
+                href={previewQR.imageData}
+                download={`${previewQR.category}-QR.png`}
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                <Download className="w-4 h-4" />
+                Download QR Code
+              </a>
             </div>
           )}
         </DialogContent>

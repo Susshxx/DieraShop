@@ -6,7 +6,7 @@ import NotificationBell from "@/components/user/NotificationBell";
 import ThemeSwitcher from "@/components/user/ThemeSwitcher";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -76,11 +76,11 @@ const DieraHeader = () => {
                 <Menu className="w-5 h-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] overflow-y-auto">
+            <SheetContent side="left" className="w-[280px] flex flex-col">
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 mt-6">
+              <nav className="flex flex-col gap-1 mt-6 flex-1 overflow-y-auto min-h-0">
                 {/* New In */}
                 <Link 
                   to="/category/new-in" 
@@ -205,33 +205,37 @@ const DieraHeader = () => {
                           <User className="w-4 h-4" />
                           <span>Profile</span>
                         </Link>
+                        <Link 
+                          to="/account/notifications" 
+                          onClick={() => setOpen(false)} 
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
+                        >
+                          <Bell className="w-4 h-4" />
+                          <span>Notifications</span>
+                        </Link>
                       </div>
                     )}
                   </div>
                 )}
-                
 
-                
-                {user && user.role !== 'admin' && (
-                  <>
-                    {/* Sign Out - Separate at bottom */}
-                    <div className="flex-1 min-h-[20px]"></div>
-                    <div className="border-t border-border mt-4 pt-3">
-                      <button
-                        onClick={async () => {
-                          setOpen(false);
-                          localStorage.removeItem('token');
-                          window.location.href = '/auth/login';
-                        }}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  </>
-                )}
               </nav>
+
+              {/* Sign Out — pinned at bottom, only for non-admin logged-in users */}
+              {user && user.role !== 'admin' && (
+                <div className="border-t border-border pt-3 pb-4 px-1 mt-auto">
+                  <button
+                    onClick={async () => {
+                      setOpen(false);
+                      localStorage.removeItem('token');
+                      window.location.href = '/auth/login';
+                    }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </SheetContent>
           </Sheet>
           <Link to="/" className="text-xl tracking-wider whitespace-nowrap text-primary" style={{ fontFamily: "'Playfair Display', serif" }}>
