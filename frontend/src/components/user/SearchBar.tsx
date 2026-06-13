@@ -85,21 +85,30 @@ const SearchBar = () => {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] backdrop-blur-md bg-black/60" onClick={() => setOpen(false)}>
-          <div className="max-w-2xl mx-auto mt-20 px-4" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={submit} className="flex items-center gap-2 bg-background border-b-2 border-primary pb-2 px-2 rounded-t-lg shadow-2xl">
-              <Search className="w-5 h-5 text-muted-foreground" />
-              <input
-                ref={inputRef}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search clothes, categories…"
-                className="flex-1 bg-transparent outline-none text-lg"
-              />
-              <button type="button" onClick={() => setOpen(false)} className="p-1"><X className="w-5 h-5" /></button>
-            </form>
+        <>
+          {/* Full-screen blur + darken layer — covers everything behind search panel */}
+          <div
+            className="fixed inset-0 z-[100]"
+            style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', backgroundColor: 'rgba(0,0,0,0.55)' }}
+            onClick={() => setOpen(false)}
+          />
 
-            <div className="mt-0 bg-background rounded-b-lg border border-border max-h-[60vh] overflow-y-auto shadow-2xl">
+          {/* Search panel — sits above the blur layer, fully sharp */}
+          <div className="fixed inset-x-0 top-0 z-[101] pointer-events-none">
+            <div className="max-w-2xl mx-auto mt-20 px-4 pointer-events-auto">
+              <form onSubmit={submit} className="flex items-center gap-2 bg-background border-b-2 border-primary pb-2 px-2 rounded-t-lg shadow-2xl">
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search clothes, categories…"
+                  className="flex-1 bg-transparent outline-none text-lg"
+                />
+                <button type="button" onClick={() => setOpen(false)} className="p-1"><X className="w-5 h-5" /></button>
+              </form>
+
+              <div className="mt-0 bg-background rounded-b-lg border border-border max-h-[60vh] overflow-y-auto shadow-2xl">
               {loading && <div className="p-6 text-sm text-muted-foreground">Searching…</div>}
               {!loading && q && results.length === 0 && categories.length === 0 && (
                 <div className="p-6 text-sm text-muted-foreground">No products or categories found for "{q}"</div>
@@ -167,8 +176,9 @@ const SearchBar = () => {
                 </div>
               )}
             </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

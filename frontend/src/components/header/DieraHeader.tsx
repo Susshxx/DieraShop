@@ -52,7 +52,7 @@ const DieraHeader = () => {
         console.error('Failed to parse cached categories');
       }
     }
-    
+
     // Fetch from API and update cache
     api.get<{ name: string; slug: string; showInHeader?: boolean }[]>("/categories")
       .then((data) => {
@@ -62,7 +62,7 @@ const DieraHeader = () => {
         const headerCats = data.filter(c => c.showInHeader !== false).slice(0, 5);
         setCats(headerCats);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -82,15 +82,15 @@ const DieraHeader = () => {
               </SheetHeader>
               <nav className="flex flex-col gap-1 mt-6 flex-1 overflow-y-auto min-h-0">
                 {/* New In */}
-                <Link 
-                  to="/category/new-in" 
-                  onClick={() => setOpen(false)} 
+                <Link
+                  to="/category/new-in"
+                  onClick={() => setOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded font-medium"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>New In</span>
                 </Link>
-                
+
                 {/* Categories Collapsible */}
                 <div>
                   <button
@@ -106,10 +106,10 @@ const DieraHeader = () => {
                   {categoriesOpen && (
                     <div className="ml-7 mt-1 space-y-1">
                       {cats.map((c) => (
-                        <Link 
-                          key={c.slug} 
-                          to={`/category/${c.slug}`} 
-                          onClick={() => setOpen(false)} 
+                        <Link
+                          key={c.slug}
+                          to={`/category/${c.slug}`}
+                          onClick={() => setOpen(false)}
                           className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           {c.name}
@@ -118,20 +118,20 @@ const DieraHeader = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* About */}
-                <Link 
-                  to="/about/our-story" 
-                  onClick={() => setOpen(false)} 
+                <Link
+                  to="/about/our-story"
+                  onClick={() => setOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                 >
                   <Info className="w-4 h-4" />
                   <span>About</span>
                 </Link>
-                
+
                 {/* Divider */}
                 <div className="border-t border-border my-3"></div>
-                
+
                 {/* Theme Collapsible */}
                 <div>
                   <button
@@ -150,12 +150,11 @@ const DieraHeader = () => {
                         <button
                           key={t}
                           onClick={() => setTheme(t)}
-                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-muted ${
-                            t === theme ? "text-foreground font-semibold" : "text-muted-foreground"
-                          }`}
+                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-muted ${t === theme ? "text-foreground font-semibold" : "text-muted-foreground"
+                            }`}
                         >
-                          <span 
-                            className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0" 
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0"
                             style={{ backgroundColor: THEME_SWATCHES[t as keyof typeof THEME_SWATCHES] }}
                           />
                           {THEME_LABELS[t as keyof typeof THEME_LABELS]}
@@ -164,7 +163,7 @@ const DieraHeader = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* User/Admin Section - Only show when logged in */}
                 {user && user.role !== 'admin' && (
                   // Regular user: Show collapsible User section
@@ -181,33 +180,33 @@ const DieraHeader = () => {
                     </button>
                     {userOpen && (
                       <div className="ml-7 mt-1 space-y-1">
-                        <Link 
-                          to="/account/orders" 
-                          onClick={() => setOpen(false)} 
+                        <Link
+                          to="/account/orders"
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <Package className="w-4 h-4" />
                           <span>My Orders</span>
                         </Link>
-                        <Link 
-                          to="/account/chat" 
-                          onClick={() => setOpen(false)} 
+                        <Link
+                          to="/account/chat"
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <MessageSquare className="w-4 h-4" />
                           <span>Chat</span>
                         </Link>
-                        <Link 
-                          to="/account/profile" 
-                          onClick={() => setOpen(false)} 
+                        <Link
+                          to="/account/profile"
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <User className="w-4 h-4" />
                           <span>Profile</span>
                         </Link>
-                        <Link 
-                          to="/account/notifications" 
-                          onClick={() => setOpen(false)} 
+                        <Link
+                          to="/account/notifications"
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                         >
                           <Bell className="w-4 h-4" />
@@ -258,7 +257,7 @@ const DieraHeader = () => {
         </Link>
 
         {/* Right side icons */}
-        <div className="flex items-center gap-1 ml-4">
+        <div className="flex items-center ml-4">
           <SearchBar />
           {/* Desktop: Theme and User Menu */}
           <div className="hidden lg:flex items-center">
