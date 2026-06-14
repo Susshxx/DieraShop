@@ -333,7 +333,7 @@ const Checkout = () => {
                 </Label>
                 <Input
                   id="address"
-                  placeholder="Gongabu"
+                  placeholder="Pulchowk"
                   value={form.address}
                   onChange={set("address")}
                   required
@@ -345,7 +345,7 @@ const Checkout = () => {
                 <Label htmlFor="landmark">Landmark</Label>
                 <Input
                   id="landmark"
-                  placeholder="eg: madan bhandari park"
+                  placeholder="eg: Labim Mall"
                   value={form.landmark}
                   onChange={set("landmark")}
                 />
