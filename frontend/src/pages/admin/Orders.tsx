@@ -292,8 +292,11 @@ const AdminOrders = () => {
                             variant="destructive"
                             onClick={() => {
                               setDeleteLabel("reject");
-                              setDeleteId(viewOrder.id);
-                              // keep viewOrder open — AlertDialog renders above it (z-[60])
+                              const oid = viewOrder.id;
+                              setViewOrder(null); // close detail dialog first
+                              // wait one tick so the Dialog's transform is fully gone
+                              // before the AlertDialog mounts with position:fixed
+                              setTimeout(() => setDeleteId(oid), 50);
                             }}
                             className="flex-1"
                           >
