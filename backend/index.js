@@ -20,6 +20,7 @@ import userRoutes, { adminRouter as adminUsers } from './routes/users.js';
 import statsRoutes from './routes/stats.js';
 import faqRoutes from './routes/faqs.js';
 import reviewRoutes from './routes/reviews.js';
+import shippingRoutes from './routes/shipping.js';
 import { verifyTokenString } from './utils/jwt.js';
 import { isEmailEnabled } from './utils/email.js';
 
@@ -56,6 +57,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/shipping-rates', shippingRoutes);
 
 app.use('/api/admin/site-images', adminSiteImages);
 app.use('/api/admin/orders', adminOrders);

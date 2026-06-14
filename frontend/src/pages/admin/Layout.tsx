@@ -1,6 +1,6 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Package, Tag, ShoppingBag, MessageCircle, HelpCircle, Image as ImgIcon, Users, LogOut, Home, Menu, Bell, X, CreditCard } from "lucide-react";
+import { LayoutDashboard, Package, Tag, ShoppingBag, MessageCircle, HelpCircle, Image as ImgIcon, Users, LogOut, Home, Menu, Bell, X, CreditCard, Truck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
@@ -15,6 +15,7 @@ const nav = [
   { to: "/admin/chats", label: "Chats", icon: MessageCircle },
   { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/payment-settings", label: "Payment Settings", icon: CreditCard },
+  { to: "/admin/shipping-settings", label: "Shipping", icon: Truck },
   { to: "/admin/site-images", label: "Site images", icon: ImgIcon },
   { to: "/admin/users", label: "Users", icon: Users },
 ];

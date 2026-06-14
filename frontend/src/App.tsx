@@ -55,6 +55,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminSiteImages from "./pages/admin/SiteImages";
 import AdminNotifications from "./pages/admin/Notifications";
 import AdminPaymentSettings from "./pages/admin/PaymentSettings";
+import AdminShippingSettings from "./pages/admin/ShippingSettings";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,7 @@ const App = () => (
                   <Route path="chats" element={<AdminChats />} />
                   <Route path="notifications" element={<AdminNotifications />} />
                   <Route path="payment-settings" element={<AdminPaymentSettings />} />
+                  <Route path="shipping-settings" element={<AdminShippingSettings />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="site-images" element={<AdminSiteImages />} />
                 </Route>

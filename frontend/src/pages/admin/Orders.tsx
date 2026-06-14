@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatNPR } from "@/hooks/useCart";
 import { toast } from "sonner";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, ZoomIn, X } from "lucide-react";
 
 // Helper function to convert product name to slug
 const nameToSlug = (name: string) => {
@@ -41,7 +41,9 @@ const AdminOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLabel, setDeleteLabel] = useState<"delete" | "reject">("delete");
   const [viewOrder, setViewOrder] = useState<any | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   
   const load = () => api.get<any[]>("/admin/orders").then(setOrders).catch(() => {});
   
@@ -76,8 +78,9 @@ const AdminOrders = () => {
     if (!deleteId) return;
     try {
       await api.delete(`/admin/orders/${deleteId}`);
-      toast.success("Order deleted successfully");
+      toast.success(deleteLabel === "reject" ? "Order rejected and deleted" : "Order deleted successfully");
       setDeleteId(null);
+      setViewOrder(null);
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
@@ -177,15 +180,19 @@ const AdminOrders = () => {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deleteLabel === "reject" ? "Reject & Cancel Order?" : "Delete Order?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this order? This action cannot be undone and will permanently remove the order from the database.
+              {deleteLabel === "reject"
+                ? "This will reject the payment and permanently cancel this order. The customer will need to re-order."
+                : "Are you sure you want to delete this order? This action cannot be undone and will permanently remove the order from the database."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteLabel("delete")}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={deleteOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Order
+              {deleteLabel === "reject" ? "Reject Order" : "Delete Order"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -253,14 +260,22 @@ const AdminOrders = () => {
                   {viewOrder.payment_method === 'phonepay' && viewOrder.paymentScreenshot && (
                     <div className="mt-3">
                       <p className="font-bold text-foreground mb-2">Payment Screenshot:</p>
-                      <div className="border rounded-lg p-2 bg-muted/20">
+                      <div
+                        className="border rounded-lg p-2 bg-muted/20 cursor-pointer group relative"
+                        onClick={() => setScreenshotPreview(viewOrder.paymentScreenshot)}
+                        title="Click to enlarge"
+                      >
                         <img
                           src={viewOrder.paymentScreenshot}
                           alt="Payment screenshot"
-                          className="w-full max-h-96 object-contain rounded"
+                          className="w-full max-h-48 object-contain rounded"
                         />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                          <ZoomIn className="w-8 h-8 text-white" />
+                        </div>
                       </div>
-                      
+                      <p className="text-xs text-muted-foreground mt-1 text-center">Click to view full size</p>
+
                       {/* Approve/Reject Buttons for awaiting_payment status */}
                       {viewOrder.status === 'awaiting_payment' && (
                         <div className="flex gap-2 mt-3">
@@ -276,12 +291,13 @@ const AdminOrders = () => {
                           <Button
                             variant="destructive"
                             onClick={() => {
+                              setDeleteLabel("reject");
                               setDeleteId(viewOrder.id);
-                              setViewOrder(null);
+                              // keep viewOrder open — AlertDialog renders above it (z-[60])
                             }}
                             className="flex-1"
                           >
-                            Reject & Cancel Order
+                            Reject &amp; Cancel Order
                           </Button>
                         </div>
                       )}
@@ -351,6 +367,30 @@ const AdminOrders = () => {
                   <p className="text-sm text-muted-foreground">{viewOrder.notes}</p>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Screenshot fullscreen preview */}
+      <Dialog open={!!screenshotPreview} onOpenChange={(open) => !open && setScreenshotPreview(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Payment Screenshot</DialogTitle>
+          </DialogHeader>
+          {screenshotPreview && (
+            <div className="flex flex-col items-center gap-4">
+              <img
+                src={screenshotPreview}
+                alt="Payment screenshot"
+                className="w-full max-h-[70vh] object-contain rounded-lg border"
+              />
+              <a
+                href={screenshotPreview}
+                download="payment-screenshot.png"
+                className="text-xs text-primary hover:underline"
+              >
+                Download image
+              </a>
             </div>
           )}
         </DialogContent>
