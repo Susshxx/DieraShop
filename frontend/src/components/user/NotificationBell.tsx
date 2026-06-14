@@ -54,7 +54,7 @@ const NotificationBell = () => {
     <Link to="/account/notifications" className="relative p-2 text-nav-foreground hover:text-nav-hover" aria-label="Notifications">
       <Bell className="w-5 h-5" />
       {count > 0 && (
-        <span className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+        <span className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 leading-none">
           {count > 9 ? "9+" : count}
         </span>
       )}
