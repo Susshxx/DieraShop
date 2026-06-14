@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { useAuth } from "./useAuth";
 
 export interface CartItem {
@@ -23,41 +23,59 @@ interface CartCtx {
 }
 
 const Ctx = createContext<CartCtx | undefined>(undefined);
-const KEY = "diera-cart";
+
+// Returns a storage key scoped to the user so carts don't bleed between accounts
+const cartKey = (userId?: string) => `diera-cart${userId ? `-${userId}` : ""}`;
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { role, user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      return JSON.parse(localStorage.getItem(KEY) || "[]");
-    } catch {
-      return [];
-    }
-  });
+  const { role, user, loading: authLoading } = useAuth();
 
+  // Track the previous userId so we can detect a real logout (not just a cold load)
+  const prevUserIdRef = useRef<string | undefined>(undefined);
+
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  // When auth resolves, load the correct cart from localStorage
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(items));
-  }, [items]);
+    if (authLoading) return; // wait until auth is settled
 
-  // Clear cart when user is not logged in or is an admin
-  useEffect(() => {
-    if (!user || role === "admin") {
-      setItems([]);
-      localStorage.removeItem(KEY);
+    if (user && role !== "admin") {
+      // User logged in — load their personal cart
+      const key = cartKey(user.id);
+      try {
+        const saved = JSON.parse(localStorage.getItem(key) || "[]");
+        setItems(Array.isArray(saved) ? saved : []);
+      } catch {
+        setItems([]);
+      }
+      prevUserIdRef.current = user.id;
+    } else if (!user) {
+      // No user — only clear if a user was previously logged in (real logout),
+      // not on the initial undefined → undefined cold load
+      if (prevUserIdRef.current !== undefined) {
+        // Genuine logout: clear state (but keep localStorage so re-login restores it)
+        setItems([]);
+      }
+      prevUserIdRef.current = undefined;
     }
-  }, [user, role]);
+    // admin: cart stays empty, no localStorage interaction needed
+  }, [user, role, authLoading]);
 
-  const keyOf = (id: string, size?: string, color?: string) => `${id}::${size ?? ""}::${color ?? ""}`;
+  // Persist items to the user-scoped key whenever items change
+  useEffect(() => {
+    if (authLoading || !user || role === "admin") return;
+    localStorage.setItem(cartKey(user.id), JSON.stringify(items));
+  }, [items, user, role, authLoading]);
+
+  const keyOf = (id: string, size?: string, color?: string) =>
+    `${id}::${size ?? ""}::${color ?? ""}`;
 
   const add = (i: CartItem) => {
-    // Don't allow adding to cart if admin or not logged in
-    if (!user || role === "admin") {
-      return;
-    }
-    
+    if (!user || role === "admin") return;
     setItems((cur) => {
-      const ix = cur.findIndex((c) => keyOf(c.productId, c.size, c.color) === keyOf(i.productId, i.size, i.color));
+      const ix = cur.findIndex(
+        (c) => keyOf(c.productId, c.size, c.color) === keyOf(i.productId, i.size, i.color)
+      );
       if (ix >= 0) {
         const next = [...cur];
         next[ix] = { ...next[ix], quantity: next[ix].quantity + i.quantity };
@@ -66,20 +84,28 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return [...cur, i];
     });
   };
+
   const remove = (id: string, size?: string, color?: string) =>
-    setItems((cur) => cur.filter((c) => keyOf(c.productId, c.size, c.color) !== keyOf(id, size, color)));
+    setItems((cur) =>
+      cur.filter((c) => keyOf(c.productId, c.size, c.color) !== keyOf(id, size, color))
+    );
+
   const setQty = (id: string, qty: number, size?: string, color?: string) =>
     setItems((cur) =>
       cur
         .map((c) =>
-          keyOf(c.productId, c.size, c.color) === keyOf(id, size, color) ? { ...c, quantity: qty } : c
+          keyOf(c.productId, c.size, c.color) === keyOf(id, size, color)
+            ? { ...c, quantity: qty }
+            : c
         )
         .filter((c) => c.quantity > 0)
     );
+
   const clear = () => {
     setItems([]);
-    localStorage.removeItem(KEY);
+    if (user) localStorage.removeItem(cartKey(user.id));
   };
+
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const count = items.reduce((s, i) => s + i.quantity, 0);
 

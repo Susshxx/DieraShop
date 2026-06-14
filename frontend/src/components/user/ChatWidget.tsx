@@ -54,7 +54,7 @@ const ChatWidget = () => {
   if (!user || role === "admin") return null;
 
   return (
-    <>
+    <div className="hidden md:contents">
       <button
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground rounded-full p-4 shadow-lg hover:opacity-90"
@@ -85,7 +85,7 @@ const ChatWidget = () => {
           </form>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
