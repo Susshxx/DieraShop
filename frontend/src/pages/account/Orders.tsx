@@ -5,8 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNPR } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
@@ -61,6 +60,7 @@ const Orders = () => {
       await api.delete(`/orders/${cancelId}`);
       toast.success("Order cancelled successfully");
       setCancelId(null);
+      setViewOrder(null);
       loadOrders();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to cancel order");
@@ -222,22 +222,28 @@ const Orders = () => {
         </div>
       ))}
 
-      <AlertDialog open={!!cancelId} onOpenChange={(open) => !open && setCancelId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
-            <AlertDialogDescription>
+      {/* Cancel confirmation — uses Dialog (reliable centering) instead of AlertDialog */}
+      <Dialog open={!!cancelId} onOpenChange={(open) => !open && setCancelId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Order?</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground rounded-lg bg-accent/40 px-4 py-3 border border-primary/10 mt-2">
               Are you sure you want to cancel this order? This action cannot be undone. You can only cancel orders that are pending or awaiting payment.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Order</AlertDialogCancel>
-            <AlertDialogAction onClick={cancelOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button variant="outline" onClick={() => setCancelId(null)} className="border-primary/30">
+              Keep Order
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={cancelOrder}
+            >
               Cancel Order
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!reviewDialog} onOpenChange={(open) => !open && setReviewDialog(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

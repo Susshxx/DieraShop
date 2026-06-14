@@ -14,13 +14,15 @@ const mapN = (n) => ({
   link: n.link,
   order_id: n.orderId,
   orderId: n.orderId,
+  read: !!n.readAt,          // ← include read boolean so frontend can style correctly
   read_at: n.readAt,
   created_at: n.createdAt,
+  createdAt: n.createdAt,
 });
 
 router.get('/', verifyToken, async (req, res) => {
   // Exclude chat notifications
-  const items = await Notification.find({ 
+  const items = await Notification.find({
     userId: req.user.id,
     type: { $ne: 'chat' }
   }).sort({ createdAt: -1 }).limit(50);
@@ -29,45 +31,62 @@ router.get('/', verifyToken, async (req, res) => {
 
 router.get('/unread-count', verifyToken, async (req, res) => {
   // Exclude chat notifications from count
-  const count = await Notification.countDocuments({ 
-    userId: req.user.id, 
+  const count = await Notification.countDocuments({
+    userId: req.user.id,
     readAt: null,
     type: { $ne: 'chat' }
   });
   res.json({ count });
 });
 
+// POST /mark-read — mark all as read (legacy)
 router.post('/mark-read', verifyToken, async (req, res) => {
   await Notification.updateMany(
     { userId: req.user.id, readAt: null },
     { readAt: new Date() }
   );
-  
-  // Emit socket event to update notification badge
   const io = req.app.get('io');
-  if (io) {
-    console.log(`[Notifications] Emitting notifications:read to user:${req.user.id}`);
-    io.to(`user:${req.user.id}`).emit('notifications:read');
-  }
-  
+  if (io) io.to(`user:${req.user.id}`).emit('notifications:read');
   res.json({ ok: true });
 });
 
+// PUT /read-all — mark all as read (frontend calls this)
+router.put('/read-all', verifyToken, async (req, res) => {
+  await Notification.updateMany(
+    { userId: req.user.id, readAt: null },
+    { readAt: new Date() }
+  );
+  const io = req.app.get('io');
+  if (io) io.to(`user:${req.user.id}`).emit('notifications:read');
+  res.json({ ok: true });
+});
+
+// PATCH /:id/read — mark one as read (legacy)
 router.patch('/:id/read', verifyToken, async (req, res) => {
   await Notification.findOneAndUpdate(
     { _id: req.params.id, userId: req.user.id },
     { readAt: new Date() }
   );
+  const io = req.app.get('io');
+  if (io) io.to(`user:${req.user.id}`).emit('notifications:read');
+  res.json({ ok: true });
+});
+
+// PUT /:id/read — mark one as read (frontend calls this)
+router.put('/:id/read', verifyToken, async (req, res) => {
+  await Notification.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user.id },
+    { readAt: new Date() }
+  );
+  const io = req.app.get('io');
+  if (io) io.to(`user:${req.user.id}`).emit('notifications:read');
   res.json({ ok: true });
 });
 
 // Delete a notification
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
-    await Notification.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    await Notification.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,6 +1,6 @@
 import express from 'express';
 import ShippingRate from '../models/ShippingRate.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -43,7 +43,7 @@ router.get('/calculate', async (req, res) => {
 });
 
 /** PUT /api/shipping-rates — admin only, upsert a single rate */
-router.put('/', requireAdmin, async (req, res) => {
+router.put('/', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { province, district, fee } = req.body;
     if (!province || fee === undefined || fee === null) {
@@ -62,7 +62,7 @@ router.put('/', requireAdmin, async (req, res) => {
 });
 
 /** DELETE /api/shipping-rates/:id — admin only */
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     await ShippingRate.findByIdAndDelete(req.params.id);
     res.json({ ok: true });

@@ -234,49 +234,51 @@ router.delete('/:id', verifyToken, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
-    
-    // Check if order belongs to user
-    if (order.userId.toString() !== req.user.id) {
+
+    // Check ownership
+    if (String(order.userId) !== String(req.user.id)) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
-    
-    // Only allow deletion if order is pending or awaiting payment
+
+    // Only allow cancel if order is pending or awaiting payment
     if (!['pending', 'awaiting_payment'].includes(order.status)) {
-      return res.status(400).json({ error: 'Cannot cancel order that has been confirmed or processed' });
+      return res.status(400).json({ error: 'Cannot cancel an order that has already been confirmed or processed' });
     }
-    
+
     await Order.findByIdAndDelete(req.params.id);
-    
-    // Send notification to user
-    const notif = await Notification.create({
-      userId: req.user.id,
-      type: 'order',
-      title: 'Order cancelled',
-      body: `Your order #${order._id.toString().slice(-8)} has been cancelled.`,
-      link: '/account/orders',
-      orderId: order._id,
-    });
-    
-    // Send notification to admins
-    const io = req.app.get('io');
-    const admins = await User.find({ role: 'admin' });
-    for (const admin of admins) {
-      const adminNotif = await Notification.create({
-        userId: admin._id,
+
+    // Notifications — non-blocking: don't let a notification failure abort the cancel
+    try {
+      const notif = await Notification.create({
+        userId: req.user.id,
         type: 'order',
-        title: 'Order cancelled by user',
-        body: `Order #${order._id.toString().slice(-8)} was cancelled.`,
-        link: '/admin/orders',
+        title: 'Order cancelled',
+        body: `Your order #${order._id.toString().slice(-8)} has been cancelled.`,
+        link: '/account/orders',
         orderId: order._id,
       });
-      emitNotification(io, admin._id.toString(), adminNotif);
+      const io = req.app.get('io');
+      emitNotification(io, req.user.id, notif);
+
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        const adminNotif = await Notification.create({
+          userId: admin._id,
+          type: 'order',
+          title: 'Order cancelled by user',
+          body: `Order #${order._id.toString().slice(-8)} was cancelled by the customer.`,
+          link: '/admin/orders',
+          orderId: order._id,
+        });
+        emitNotification(io, admin._id.toString(), adminNotif);
+      }
+    } catch (notifErr) {
+      console.error('Notification error (non-fatal):', notifErr);
     }
-    
-    emitNotification(io, req.user.id, notif);
-    
+
     res.json({ message: 'Order cancelled successfully' });
   } catch (error) {
-    console.error('Error deleting order:', error);
+    console.error('Error cancelling order:', error);
     res.status(500).json({ error: 'Failed to cancel order' });
   }
 });
