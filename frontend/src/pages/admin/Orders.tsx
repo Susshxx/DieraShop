@@ -3,8 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatNPR } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Trash2, Eye, ZoomIn, X } from "lucide-react";
@@ -177,26 +176,36 @@ const AdminOrders = () => {
         {orders.length === 0 && <p className="text-muted-foreground">No orders yet.</p>}
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+      {/* Delete / Reject confirmation — Dialog centres reliably on all screen sizes */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); setDeleteLabel("delete"); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               {deleteLabel === "reject" ? "Reject & Cancel Order?" : "Delete Order?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground rounded-lg bg-accent/40 px-4 py-3 border border-primary/10 mt-2">
               {deleteLabel === "reject"
                 ? "This will reject the payment and permanently cancel this order. The customer will need to re-order."
                 : "Are you sure you want to delete this order? This action cannot be undone and will permanently remove the order from the database."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteLabel("delete")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="border-primary/30"
+              onClick={() => { setDeleteId(null); setDeleteLabel("delete"); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteOrder}
+            >
               {deleteLabel === "reject" ? "Reject Order" : "Delete Order"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!viewOrder} onOpenChange={(open) => !open && setViewOrder(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
