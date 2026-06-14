@@ -15,8 +15,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
           toast:
             "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          success:
+            "group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-primary/40 group-[.toaster]:shadow-lg [&>svg]:text-primary",
+          error:
+            "group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-destructive/50 group-[.toaster]:shadow-lg [&>svg]:text-destructive",
+          warning:
+            "group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-primary/30 group-[.toaster]:shadow-lg [&>svg]:text-primary",
+          info:
+            "group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-primary/30 group-[.toaster]:shadow-lg [&>svg]:text-primary",
         },
       }}
       {...props}

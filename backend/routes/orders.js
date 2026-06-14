@@ -57,11 +57,29 @@ router.post('/create', verifyToken, async (req, res) => {
       if (!product) {
         return res.status(400).json({ error: `Product not found: ${item.productName || item.name}` });
       }
-      
+
       const requestedQty = item.qty || item.quantity;
-      if (product.stock < requestedQty) {
-        return res.status(400).json({ 
-          error: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${requestedQty}` 
+      const size = item.size || null;
+      const color = item.color || null;
+
+      // Build variant key (e.g. "S-Black") when size/color are present
+      let availableStock;
+      if (size || color) {
+        const variantKey = [size, color].filter(Boolean).join('-');
+        const variantQty = product.variantStock?.get(variantKey);
+        if (variantQty !== undefined) {
+          availableStock = variantQty;
+        } else {
+          // Fallback: sum variantStock entries that match the provided size/color partially
+          availableStock = product.stock;
+        }
+      } else {
+        availableStock = product.stock;
+      }
+
+      if (availableStock < requestedQty) {
+        return res.status(400).json({
+          error: `Insufficient stock for ${product.name}${size ? ` (${size})` : ''}${color ? ` / ${color}` : ''}. Available: ${availableStock}, Requested: ${requestedQty}`,
         });
       }
     }

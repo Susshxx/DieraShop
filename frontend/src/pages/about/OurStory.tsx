@@ -9,16 +9,16 @@ const OurStory = () => {
   return (
     <div className="min-h-screen bg-background">
       <DieraHeader />
-      
+
       <div className="flex max-w-7xl mx-auto">
         <AboutSidebar />
-        
+
         <main className="flex-1 px-6 lg:px-12 py-8">
-          <PageHeader 
-            title="Our Story" 
+          <PageHeader
+            title="Our Story"
             subtitle="Bringing authentic Nepali fashion to your wardrobe"
           />
-          
+
           <ContentSection>
             <ImageTextBlock
               image="\src\assets\founders.png"
@@ -70,7 +70,7 @@ const OurStory = () => {
           </ContentSection>
         </main>
       </div>
-      
+
       <Footer />
     </div>
   );
