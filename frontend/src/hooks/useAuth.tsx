@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // clearToken is synchronous (localStorage) — token is gone before any re-render
     clearToken();
     setUser(null);
     setRole(null);

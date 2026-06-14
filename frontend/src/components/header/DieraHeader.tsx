@@ -5,10 +5,11 @@ import UserMenu from "@/components/user/UserMenu";
 import NotificationBell from "@/components/user/NotificationBell";
 import ThemeSwitcher from "@/components/user/ThemeSwitcher";
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
-import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut, Bell } from "lucide-react";
+import { api, clearToken } from "@/lib/api";
+import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut, Bell, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useNavigate } from "react-router-dom";
 import {
   Sheet,
   SheetContent,
@@ -32,8 +33,9 @@ const THEME_SWATCHES = {
 };
 
 const DieraHeader = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { theme, setTheme, themes } = useTheme();
+  const navigate = useNavigate();
   const [cats, setCats] = useState<{ name: string; slug: string; showInHeader?: boolean }[]>([]);
   const [open, setOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -64,6 +66,13 @@ const DieraHeader = () => {
       })
       .catch(() => { });
   }, []);
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    clearToken();
+    await signOut();
+    navigate('/auth/login');
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-nav-background/95 backdrop-blur border-b border-border">
@@ -150,8 +159,9 @@ const DieraHeader = () => {
                         <button
                           key={t}
                           onClick={() => setTheme(t)}
-                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-muted ${t === theme ? "text-foreground font-semibold" : "text-muted-foreground"
-                            }`}
+                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-muted ${
+                            t === theme ? "text-foreground font-semibold" : "text-muted-foreground"
+                          }`}
                         >
                           <span
                             className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0"
@@ -164,70 +174,81 @@ const DieraHeader = () => {
                   )}
                 </div>
 
-                {/* User/Admin Section - Only show when logged in */}
-                {user && user.role !== 'admin' && (
-                  // Regular user: Show collapsible User section
-                  <div>
-                    <button
-                      onClick={() => setUserOpen(!userOpen)}
-                      className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
-                    >
-                      <div className="flex items-center gap-3">
-                        <User className="w-4 h-4" />
-                        <span>User</span>
+                {/* ── Logged-in user / admin section ── */}
+                {user && (
+                  <>
+                    <div className="border-t border-border my-3"></div>
+
+                    {user.role === 'admin' ? (
+                      /* Admin: user icon + email header, Admin dashboard link inside */
+                      <div>
+                        <button
+                          onClick={() => setUserOpen(!userOpen)}
+                          className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <User className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate text-sm">{user.email}</span>
+                          </div>
+                          {userOpen ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
+                        </button>
+                        {userOpen && (
+                          <div className="ml-7 mt-1 space-y-1">
+                            <Link
+                              to="/admin"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
+                            >
+                              <ShieldCheck className="w-4 h-4" />
+                              <span>Admin dashboard</span>
+                            </Link>
+                          </div>
+                        )}
                       </div>
-                      {userOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    {userOpen && (
-                      <div className="ml-7 mt-1 space-y-1">
-                        <Link
-                          to="/account/orders"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
+                    ) : (
+                      /* Regular user: user icon + email header, account links inside */
+                      <div>
+                        <button
+                          onClick={() => setUserOpen(!userOpen)}
+                          className="flex items-center justify-between w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                         >
-                          <Package className="w-4 h-4" />
-                          <span>My Orders</span>
-                        </Link>
-                        <Link
-                          to="/account/chat"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          <span>Chat</span>
-                        </Link>
-                        <Link
-                          to="/account/profile"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
-                        >
-                          <User className="w-4 h-4" />
-                          <span>Profile</span>
-                        </Link>
-                        <Link
-                          to="/account/notifications"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded"
-                        >
-                          <Bell className="w-4 h-4" />
-                          <span>Notifications</span>
-                        </Link>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <User className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate text-sm">{user.email}</span>
+                          </div>
+                          {userOpen ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
+                        </button>
+                        {userOpen && (
+                          <div className="ml-7 mt-1 space-y-1">
+                            <Link to="/account/orders" onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded">
+                              <Package className="w-4 h-4" /><span>My Orders</span>
+                            </Link>
+                            <Link to="/account/chat" onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded">
+                              <MessageSquare className="w-4 h-4" /><span>Chat</span>
+                            </Link>
+                            <Link to="/account/profile" onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded">
+                              <User className="w-4 h-4" /><span>Profile</span>
+                            </Link>
+                            <Link to="/account/notifications" onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded">
+                              <Bell className="w-4 h-4" /><span>Notifications</span>
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
-
               </nav>
 
-              {/* Sign Out — pinned at bottom, only for non-admin logged-in users */}
-              {user && user.role !== 'admin' && (
+              {/* Sign Out — pinned at bottom for ALL logged-in users (admin + regular) */}
+              {user && (
                 <div className="border-t border-border pt-3 pb-4 px-1 mt-auto">
                   <button
-                    onClick={async () => {
-                      setOpen(false);
-                      localStorage.removeItem('token');
-                      window.location.href = '/auth/login';
-                    }}
+                    onClick={handleSignOut}
                     className="flex items-center gap-3 w-full px-3 py-2.5 text-nav-foreground hover:bg-muted rounded"
                   >
                     <LogOut className="w-4 h-4" />
@@ -265,21 +286,14 @@ const DieraHeader = () => {
             {user?.role !== 'admin' && <NotificationBell />}
             <UserMenu />
           </div>
-          {/* Mobile: Show appropriate icon based on user role */}
+          {/* Mobile: notification bell for regular users only; admin controls are in the drawer */}
           {user ? (
-            user.role === 'admin' ? (
-              // Admin: Show UserMenu (old behavior)
-              <div className="lg:hidden">
-                <UserMenu />
-              </div>
-            ) : (
-              // Regular user: Show notification bell
+            user.role !== 'admin' && (
               <div className="lg:hidden">
                 <NotificationBell />
               </div>
             )
           ) : (
-            // Not logged in: Show login link
             <Link to="/auth/login" className="lg:hidden p-2" aria-label="Login">
               <User className="w-5 h-5" />
             </Link>

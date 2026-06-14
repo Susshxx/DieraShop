@@ -24,13 +24,13 @@ const NotificationBell = () => {
     if (!user) return;
     loadCount();
     const socket = connectSocket();
-    
+
     // Listen for new notifications
     const handleNewNotification = () => {
       console.log('[NotificationBell] Received notification:new event');
       loadCount();
     };
-    
+
     // Listen for notifications marked as read
     const handleNotificationsRead = () => {
       console.log('[NotificationBell] Received notifications:read event');
@@ -39,11 +39,11 @@ const NotificationBell = () => {
       // Then reload to confirm
       loadCount();
     };
-    
+
     socket.on("notification:new", handleNewNotification);
     socket.on("notifications:read", handleNotificationsRead);
-    
-    return () => { 
+
+    return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notifications:read", handleNotificationsRead);
     };

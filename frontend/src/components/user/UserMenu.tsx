@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { User as UserIcon, LogOut, Package, MessageCircle, Bell, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { clearToken } from "@/lib/api";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const UserMenu = () => {
@@ -38,7 +39,7 @@ const UserMenu = () => {
           </>
         )}
         {role !== "admin" && <DropdownMenuSeparator />}
-        <DropdownMenuItem onClick={async () => { await signOut(); nav("/auth/login"); }}><LogOut className="w-4 h-4 mr-2" /> Sign out</DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => { clearToken(); await signOut(); nav("/auth/login"); }}><LogOut className="w-4 h-4 mr-2" /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

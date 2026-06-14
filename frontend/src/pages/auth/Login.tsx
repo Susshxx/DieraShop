@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { authApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -11,12 +11,17 @@ import { Eye, EyeOff } from "lucide-react";
 const Login = () => {
   const nav = useNavigate();
   const loc = useLocation();
-  const { setAuth } = useAuth();
+  const { user, loading, setAuth } = useAuth();
   const from = (loc.state as { from?: { pathname: string } })?.from?.pathname || "/account";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // If already logged in, redirect away immediately
+  if (!loading && user) {
+    return <Navigate to={from === "/auth/login" ? "/" : from} replace />;
+  }
 
   const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
