@@ -8,6 +8,7 @@ import { isNewProduct } from "@/lib/productUtils";
 import NewBadge from "@/components/product/NewBadge";
 import EditableImage from "@/components/admin/EditableImage";
 import heroDefault from "@/assets/hero-image.png";
+import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 
 // No default category images - all loaded from database
 const categoryImages: Record<string, string> = {};
@@ -17,53 +18,30 @@ const Index = () => {
   const [cats, setCats] = useState<any[]>([]);
 
   useEffect(() => {
-    // Try to load featured products from localStorage first
-    const cachedFeatured = localStorage.getItem('diera-featured-products');
-    if (cachedFeatured) {
-      try {
-        const parsed = JSON.parse(cachedFeatured);
-        setFeatured(parsed);
-      } catch (e) {
-        console.error('Failed to parse cached featured products');
-      }
-    }
-    
-    // Fetch from API and update cache
-    api.get<any[]>("/products?featured=true&limit=8").then((data) => {
-      localStorage.setItem('diera-featured-products', JSON.stringify(data));
-      setFeatured(data);
-    }).catch(() => {});
-    
-    // Try to load categories from localStorage first
-    const cachedCats = localStorage.getItem('diera-categories-with-images');
-    if (cachedCats) {
-      try {
-        const parsed = JSON.parse(cachedCats);
-        setCats(parsed);
-      } catch (e) {
-        console.error('Failed to parse cached categories');
-      }
-    }
-    
-    // Fetch from API and update cache
-    api.get<any[]>("/categories").then((data) => {
-      // Fetch category images for ALL categories (no limit)
-      const catsWithImages = data.map(async (cat) => {
-        try {
-          const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
-          return {
-            ...cat,
-            image_url: imgData.imageData || imgData.image_data || cat.image_url
-          };
-        } catch {
-          return cat;
-        }
-      });
-      Promise.all(catsWithImages).then((catsData) => {
-        localStorage.setItem('diera-categories-with-images', JSON.stringify(catsData));
-        setCats(catsData);
-      });
-    }).catch(() => {});
+    // Featured products — instant from cache, refreshed in background
+    loadWithCache<any[]>(
+      CACHE_KEYS.featuredProducts,
+      () => api.get<any[]>("/products?featured=true&limit=8"),
+      (data) => setFeatured(data)
+    );
+
+    // Categories with images — instant from cache, refreshed in background
+    loadWithCache<any[]>(
+      "diera-categories-with-images",
+      async () => {
+        const data = await api.get<any[]>("/categories");
+        const catsWithImages = data.map(async (cat) => {
+          try {
+            const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
+            return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
+          } catch {
+            return cat;
+          }
+        });
+        return Promise.all(catsWithImages);
+      },
+      (catsData) => setCats(catsData)
+    );
   }, []);
 
   return (

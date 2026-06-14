@@ -8,6 +8,7 @@ import { isNewProduct } from "@/lib/productUtils";
 import NewBadge from "@/components/product/NewBadge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 
 const NewIn = () => {
   const [allItems, setAllItems] = useState<any[]>([]);
@@ -16,21 +17,20 @@ const NewIn = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    setLoading(true);
-    // Fetch all products and sort by creation date (newest first)
-    api.get<any[]>("/products?limit=50")
-      .then((products) => {
-        // Sort by createdAt date in descending order (newest first)
-        const sortedProducts = products.sort((a, b) => {
+    loadWithCache<any[]>(
+      CACHE_KEYS.newIn,
+      () => api.get<any[]>("/products?limit=200"),
+      (products, fromCache) => {
+        const sorted = [...products].sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
           const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
           return dateB - dateA;
         });
-        setAllItems(sortedProducts);
+        setAllItems(sorted);
         setCurrentPage(1);
-      })
-      .catch(() => setAllItems([]))
-      .finally(() => setLoading(false));
+        setLoading(false); // hide spinner as soon as we have data (cached or fresh)
+      }
+    );
   }, []);
 
   // Calculate pagination

@@ -51,13 +51,16 @@ const NotificationBell = () => {
 
   if (!user) return null;
   return (
-    <Link to="/account/notifications" className="relative p-2 text-nav-foreground hover:text-nav-hover" aria-label="Notifications">
-      <Bell className="w-5 h-5" />
-      {count > 0 && (
-        <span className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 leading-none">
-          {count > 9 ? "9+" : count}
-        </span>
-      )}
+    <Link to="/account/notifications" className="p-2 text-nav-foreground hover:text-nav-hover inline-flex items-center justify-center" aria-label="Notifications">
+      {/* Relative wrapper sized to the icon so badge anchors to it, not the padded link */}
+      <span className="relative inline-flex">
+        <Bell className="w-5 h-5" />
+        {count > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 leading-none">
+            {count > 9 ? "9+" : count}
+          </span>
+        )}
+      </span>
     </Link>
   );
 };

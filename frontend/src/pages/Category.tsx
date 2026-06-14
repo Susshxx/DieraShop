@@ -8,6 +8,7 @@ import { isNewProduct } from "@/lib/productUtils";
 import NewBadge from "@/components/product/NewBadge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 
 const Category = () => {
   const { category } = useParams();
@@ -18,21 +19,27 @@ const Category = () => {
 
   useEffect(() => {
     if (!category) return;
-    api.get<any>(`/categories/slug/${category}`)
-      .then((data) => {
-        setCat(data);
-        return api.get<any[]>(`/products?categoryId=${data.id}`);
-      })
-      .then((ps) => {
-        setAllItems(ps || []);
-        setCurrentPage(1); // Reset to first page when category changes
-      })
-      .catch(() => {
-        api.get<any[]>("/products").then((ps) => {
-          setAllItems(ps || []);
-          setCurrentPage(1);
-        }).catch(() => {});
-      });
+
+    // Fetch (or cache-hit) category meta
+    const catCacheKey = `diera-cat-meta-${category}`;
+    loadWithCache<any>(
+      catCacheKey,
+      () => api.get<any>(`/categories/slug/${category}`),
+      (catData) => setCat(catData)
+    );
+
+    // Fetch (or cache-hit) products for this category slug
+    loadWithCache<any[]>(
+      CACHE_KEYS.categoryProducts(category),
+      async () => {
+        const catData = await api.get<any>(`/categories/slug/${category}`);
+        return api.get<any[]>(`/products?categoryId=${catData.id}`);
+      },
+      (products) => {
+        setAllItems(products || []);
+        setCurrentPage(1);
+      }
+    );
   }, [category]);
 
   // Calculate pagination
