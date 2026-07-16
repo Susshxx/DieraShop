@@ -27,6 +27,11 @@ const Categories = () => {
     try {
       await api.post("/categories", { name: name.trim(), slug: slugify(name) });
       setName("");
+      
+      // Invalidate cache
+      localStorage.removeItem('diera-categories');
+      localStorage.removeItem('diera-categories-timestamp');
+      
       load();
       toast.success("Category added");
     } catch (err) {
@@ -37,6 +42,11 @@ const Categories = () => {
   const del = async (id: string) => {
     if (!confirm("Delete category?")) return;
     await api.delete(`/categories/${id}`);
+    
+    // Invalidate cache
+    localStorage.removeItem('diera-categories');
+    localStorage.removeItem('diera-categories-timestamp');
+    
     load();
     toast.success("Category deleted");
   };
@@ -96,6 +106,11 @@ const Categories = () => {
         showInHeader: newValue,
         showInFooter: category.showInFooter ?? category.show_in_footer ?? true
       });
+      
+      // Invalidate cache to force refresh on next page load
+      localStorage.removeItem('diera-categories');
+      localStorage.removeItem('diera-categories-timestamp');
+      
       load();
       toast.success(newValue ? "Added to header" : "Removed from header");
     } catch (err) {
@@ -114,6 +129,11 @@ const Categories = () => {
         showInHeader: category.showInHeader ?? category.show_in_header ?? true,
         showInFooter: newValue
       });
+      
+      // Invalidate cache to force refresh on next page load
+      localStorage.removeItem('diera-categories');
+      localStorage.removeItem('diera-categories-timestamp');
+      
       load();
       toast.success(newValue ? "Added to footer" : "Removed from footer");
     } catch (err) {

@@ -259,8 +259,17 @@ const ProductDetail = () => {
             <Link to="/" className="hover:text-foreground">Home</Link>
             {" / "}
             <Link to="/collections" className="hover:text-foreground">Collections</Link>
-            {" / "}
-            <span className="text-foreground">{p.categoryId?.name || p.categories?.name || p.category?.name || 'Category'}</span>
+            {(p.categoryId?.name || p.categories?.name || p.category?.name) && (
+              <>
+                {" / "}
+                <Link 
+                  to={`/category/${p.categoryId?.slug || p.categories?.slug || p.category?.slug || ''}`} 
+                  className="hover:text-foreground"
+                >
+                  {p.categoryId?.name || p.categories?.name || p.category?.name}
+                </Link>
+              </>
+            )}
             {" / "}
             <span className="text-foreground">{p.name}</span>
           </p>
@@ -295,7 +304,7 @@ const ProductDetail = () => {
               <div>
                 <h1 className="text-xl sm:text-2xl font-semibold mb-1">{p.name}</h1>
                 <p className="text-sm text-muted-foreground italic">
-                  {p.categoryId?.name || p.categories?.name || p.category?.name || 'Collection'}
+                  {p.categoryId?.name || p.categories?.name || p.category?.name || p.categoryName || ''}
                 </p>
               </div>
 

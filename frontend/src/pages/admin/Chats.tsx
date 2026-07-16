@@ -16,6 +16,7 @@ const Chats = () => {
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [showMobileChat, setShowMobileChat] = useState(false);
 
   useEffect(() => {
     api.get<any[]>("/admin/chat/conversations").then(setConvs).catch(() => {});
@@ -186,11 +187,12 @@ const Chats = () => {
     <div>
       <h1 className="text-2xl mb-6">Chats</h1>
       <div className="grid md:grid-cols-3 gap-4 h-[70vh]">
-        <div className="border border-border rounded-lg bg-card overflow-y-auto">
+        {/* Conversation List - hide on mobile when chat is open */}
+        <div className={`border border-border rounded-lg bg-card overflow-y-auto ${showMobileChat ? 'hidden md:block' : 'block'}`}>
           {convs.map((c) => {
             const unreadCount = c.unread_count || 0;
             return (
-              <button key={c.id} onClick={() => setActive(c)}
+              <button key={c.id} onClick={() => { setActive(c); setShowMobileChat(true); }}
                 className={`w-full text-left p-3 border-b border-border hover:bg-accent ${active?.id === c.id ? "bg-accent" : ""} relative`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -211,10 +213,35 @@ const Chats = () => {
           })}
           {convs.length === 0 && <p className="p-4 text-sm text-muted-foreground">No conversations.</p>}
         </div>
-        <div className="md:col-span-2 border border-border rounded-lg bg-card flex flex-col h-[70vh]">
-          {!active && <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Select a conversation</div>}
+        
+        {/* Chat Area - show on mobile when conversation selected */}
+        <div className={`md:col-span-2 border border-border rounded-lg bg-card flex flex-col h-[70vh] ${!showMobileChat ? 'hidden md:flex' : 'flex'}`}>
+          {!active && (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+              Select a conversation
+            </div>
+          )}
           {active && (
             <>
+              {/* Mobile back button header */}
+              <div className="md:hidden flex items-center gap-3 p-3 border-b border-border bg-accent/30">
+                <button 
+                  onClick={() => { setActive(null); setShowMobileChat(false); }}
+                  className="p-1.5 hover:bg-accent rounded-lg transition-colors"
+                  aria-label="Back to conversations"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                    {getUserInitials(active.profiles?.full_name)}
+                  </div>
+                  <p className="text-sm font-medium">{active.profiles?.full_name || "Guest User"}</p>
+                </div>
+              </div>
+              
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {msgs.map((m) => (
                   <div key={m.id}>{renderMessage(m)}</div>

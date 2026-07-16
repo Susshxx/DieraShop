@@ -13,7 +13,7 @@ const OurStory = () => {
       <div className="flex max-w-7xl mx-auto">
         <AboutSidebar />
 
-        <main className="flex-1 px-6 lg:px-12 py-8">
+        <main className="flex-1 px-6 lg:px-12 py-6">
           <PageHeader
             title="Our Story"
             subtitle="Bringing authentic Nepali fashion to your wardrobe"
@@ -21,7 +21,7 @@ const OurStory = () => {
 
           <ContentSection>
             <ImageTextBlock
-              image="\src\assets\founders.png"
+              image="/founders.png"
               imageAlt="Diera Shop"
               title="Founded on Passion"
               content="Diera Shop was born from a deep love for Nepal's rich textile heritage and contemporary fashion. We started with a simple mission: to bring high-quality, handpicked clothing from Nepal to fashion enthusiasts who appreciate authenticity, quality, and cultural craftsmanship in every thread."

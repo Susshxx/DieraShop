@@ -12,14 +12,14 @@ const Sustainability = () => {
       <div className="flex max-w-7xl mx-auto">
         <AboutSidebar />
         
-        <main className="flex-1 px-6 lg:px-12 py-8">
+        <main className="flex-1 px-6 lg:px-12 py-6">
         <PageHeader 
           title="Sustainability" 
           subtitle="Creating beautiful fashion while celebrating Nepali craftsmanship and protecting our environment"
         />
         
         <ContentSection title="Our Commitment to Nepal">
-          <div className="grid md:grid-cols-2 gap-12 mb-16">
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
             <div className="space-y-6">
               <h3 className="text-xl font-light text-foreground">Local Craftsmanship</h3>
               <p className="text-muted-foreground leading-relaxed">

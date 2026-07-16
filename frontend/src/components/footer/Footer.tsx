@@ -14,20 +14,56 @@ const Footer = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
+    const CACHE_KEY = 'diera-categories';
+    const CACHE_TIMESTAMP_KEY = 'diera-categories-timestamp';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
     const fetchCategories = async () => {
       try {
-        const data = await api.get<Category[]>(`/categories?t=${Date.now()}`);
+        const data = await api.get<Category[]>('/categories');
+        
+        // Save to localStorage with timestamp
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
         // Filter to show only categories with showInFooter enabled
         const filtered = data.filter((c) => {
           const val = c.showInFooter ?? c.show_in_footer;
           return val === true || val === 1;
         });
-        console.log('Footer categories (filtered by showInFooter):', filtered);
+        
+        console.log('Footer categories fetched and cached (filtered by showInFooter):', filtered);
         setCategories(filtered);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
       }
     };
+
+    // Try to load from cache first
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    
+    if (cachedData && cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp);
+      
+      if (age < CACHE_DURATION) {
+        // Use cached data if it's fresh
+        try {
+          const data: Category[] = JSON.parse(cachedData);
+          const filtered = data.filter((c) => {
+            const val = c.showInFooter ?? c.show_in_footer;
+            return val === true || val === 1;
+          });
+          setCategories(filtered);
+          console.log('Using cached footer categories (age: ' + Math.round(age / 1000) + 's)');
+          return; // Don't fetch from server
+        } catch (e) {
+          console.error('Failed to parse cached categories:', e);
+        }
+      }
+    }
+    
+    // If no cache or cache is stale, fetch from server
     fetchCategories();
   }, []);
 
@@ -62,11 +98,11 @@ const Footer = () => {
             <div className="space-y-2 text-sm font-light text-muted-foreground">
               <div>
                 <p className="font-normal text-foreground mb-1">Visit Us</p>
-                <p>Bricks Cafe Building</p>
+                <p><a href="https://www.google.com/maps/place/Bricks+Cafe/@27.6855494,85.3151237,17z/data=!4m14!1m7!3m6!1s0x39eb19b437538aad:0xce90329ca745c9f3!2sBricks+Cafe!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x!3m5!1s0x39eb19b437538aad:0xce90329ca745c9f3!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x?entry=ttu&g_ep=EgoyMDI2MDcxMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Bricks Cafe Building</a></p>
               </div>
               <div>
                 <p className="font-normal text-foreground mb-1 mt-3">Contact</p>
-                <p><a href="tel:+9779981234567" className="hover:text-primary transition-colors">+977 981234567</a></p>
+                <p><a href="tel:+9779981234567" className="hover:text-primary transition-colors">+977 9818276861</a></p>
               </div>
             </div>
           </div>

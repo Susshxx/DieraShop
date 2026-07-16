@@ -10,20 +10,20 @@ interface Store {
 const stores: Store[] = [
   {
     name: "Diera Shop",
-    address: "Opp to Bricks Cafe",
-    phone: "+977 9981234567",
+    address: "Bricks Cafe Building",
+    phone: "+977 9818276861",
     hours: "Sunday-Friday: 10AM-8PM",
-    lat: 27.6857695,
-    lng: 85.3233144
+    lat: 27.6855447,
+    lng: 85.3176986
   }
 ];
 
 const StoreMap = () => {
   return (
     <div className="w-full h-96 rounded-lg overflow-hidden border border-border bg-muted/10 relative">
-      {/* Google Maps Embed with Diera Shop location */}
+      {/* Google Maps Embed with Bricks Cafe location */}
       <iframe
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.5668745234!2d85.32110737613179!3d27.685769524971665!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb19ff47b3cb17%3A0x64bf31fe9f44eaa3!2sDiera%20Shop!5e0!3m2!1sen!2snp!4v1717500000000!5m2!1sen!2snp"
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.587394!2d85.3151237!3d27.6855494!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb19b437538aad%3A0xce90329ca745c9f3!2sBricks%20Cafe!5e0!3m2!1sen!2snp!4v1717500000000!5m2!1sen!2snp"
         width="100%"
         height="100%"
         style={{ border: 0 }}

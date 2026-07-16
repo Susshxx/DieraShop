@@ -102,7 +102,7 @@ const CustomerCare = () => {
       <div className="flex max-w-7xl mx-auto">
         <AboutSidebar />
         
-        <main className="flex-1 px-6 lg:px-12 py-8">
+        <main className="flex-1 px-6 lg:px-12 py-6">
         <PageHeader 
           title="Customer Care" 
           subtitle="We're here to help you with all your fashion needs"
@@ -112,12 +112,12 @@ const CustomerCare = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="space-y-4">
               <h3 className="text-lg font-light text-foreground">Phone</h3>
-              <p className="text-muted-foreground">+977 9981234567</p>
-              <p className="text-sm text-muted-foreground">Sunday-Friday: 10AM-8PM</p>
+              <p className="text-muted-foreground"><a href="tel:+9779818276861" className="hover:text-primary transition-colors">+977 9818276861</a></p>
+              <p className="text-sm text-muted-foreground">Sunday-Friday: 10AM-7:30PM</p>
             </div>
             <div className="space-y-4">
               <h3 className="text-lg font-light text-foreground">Location</h3>
-              <p className="text-muted-foreground">Opp to Bricks Cafe</p>
+              <p className="text-muted-foreground">Bricks Cafe Building</p>
               <p className="text-sm text-muted-foreground">Visit us during business hours</p>
             </div>
             <div className="space-y-4">

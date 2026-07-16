@@ -10,12 +10,12 @@ const StoreLocator = () => {
   const stores = [
     {
       name: "Diera Shop",
-      address: "Opp to Bricks Cafe",
-      phone: "+977 9981234567",
-      hours: "Sunday-Friday: 10AM-8PM",
-      services: ["Personal Shopping", "Custom Design", "Repairs", "Appraisals"],
-      mapUrl: "https://www.google.com/maps/place/Diera+Shop/@27.685671,85.3179358,20z/data=!4m6!3m5!1s0x39eb19ff47b3cb17:0x64bf31fe9f44eaa3!8m2!3d27.6857695!4d85.3233144!16s%2Fg%2F11xz16s28n",
-      directionsUrl: "https://www.google.com/maps/dir/?api=1&destination=27.6857695,85.3233144&destination_place_id=ChIJF8uzR_8ZbTkRo-pE_v4xv2Q"
+      address: "Bricks Cafe Building",
+      phone: "+977 9818276861",
+      hours: "Sunday-Friday: 10AM-7:30PM",
+      services: ["Personal Shopping", "Custom Design","Quality Products"],
+      mapUrl: "https://www.google.com/maps/place/Bricks+Cafe/@27.6855494,85.3151237,17z/data=!4m14!1m7!3m6!1s0x39eb19b437538aad:0xce90329ca745c9f3!2sBricks+Cafe!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x!3m5!1s0x39eb19b437538aad:0xce90329ca745c9f3!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x?entry=ttu&g_ep=EgoyMDI2MDcxMy4wIKXMDSoASAFQAw%3D%3D",
+      directionsUrl: "https://www.google.com/maps/dir/?api=1&destination=27.6855447,85.3176986&destination_place_id=ChIJrdU1R7sZbTkR88dKn_4xv2Q"
     }];
 
   return (
@@ -25,7 +25,7 @@ const StoreLocator = () => {
       <div className="flex max-w-7xl mx-auto">
         <AboutSidebar />
         
-        <main className="flex-1 px-6 lg:px-12 py-8">
+        <main className="flex-1 px-6 lg:px-12 py-6">
         <PageHeader 
           title="Store Locator" 
           subtitle="Visit us in person for a clothes experience"
