@@ -19,7 +19,17 @@ const NewIn = () => {
       CACHE_KEYS.newIn,
       () => api.get<any[]>("/products?limit=200&populate=category"),
       (products) => {
-        const sorted = [...products].sort((a, b) => {
+        // Filter products to only show those added in the last 7 days
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const newProducts = products.filter((product) => {
+          const createdAt = product.created_at || product.createdAt;
+          if (!createdAt) return false;
+          const productDate = new Date(createdAt).getTime();
+          return productDate >= sevenDaysAgo;
+        });
+        
+        // Sort by newest first
+        const sorted = [...newProducts].sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
           const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
           return dateB - dateA;

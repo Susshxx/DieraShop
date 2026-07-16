@@ -40,6 +40,7 @@ const ProductDetail = () => {
     if (!productId) return;
     api.get<any>(`/products/slug/${productId}`)
       .then((data) => {
+        console.log('Product data loaded:', data); // Debug: check category data
         setP(data);
         setMainImg(data?.images?.[0] || "");
         // Only set default size/color if the arrays have valid values
@@ -259,17 +260,34 @@ const ProductDetail = () => {
             <Link to="/" className="hover:text-foreground">Home</Link>
             {" / "}
             <Link to="/collections" className="hover:text-foreground">Collections</Link>
-            {(p.categoryId?.name || p.categories?.name || p.category?.name) && (
-              <>
-                {" / "}
-                <Link 
-                  to={`/category/${p.categoryId?.slug || p.categories?.slug || p.category?.slug || ''}`} 
-                  className="hover:text-foreground"
-                >
-                  {p.categoryId?.name || p.categories?.name || p.category?.name}
-                </Link>
-              </>
-            )}
+            {(() => {
+              // Extract category name and slug with multiple fallbacks
+              const categoryName = p.categoryId?.name || 
+                                  p.categories?.name || 
+                                  p.category?.name || 
+                                  p.categoryName ||
+                                  p.category_name;
+              const categorySlug = p.categoryId?.slug || 
+                                  p.categories?.slug || 
+                                  p.category?.slug || 
+                                  p.categorySlug ||
+                                  p.category_slug;
+              
+              if (categoryName) {
+                return (
+                  <>
+                    {" / "}
+                    <Link 
+                      to={`/category/${categorySlug || ''}`} 
+                      className="hover:text-foreground"
+                    >
+                      {categoryName}
+                    </Link>
+                  </>
+                );
+              }
+              return null;
+            })()}
             {" / "}
             <span className="text-foreground">{p.name}</span>
           </p>
