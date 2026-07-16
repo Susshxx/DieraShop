@@ -142,7 +142,7 @@ const Categories = () => {
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl mb-6">Categories</h1>
       <form onSubmit={add} className="flex gap-2 mb-6">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kurtis" />
@@ -150,9 +150,10 @@ const Categories = () => {
       </form>
       <div className="border border-border rounded-lg bg-card divide-y divide-border">
         {items.map((c) => (
-          <div key={c.id} className="p-4 space-y-3">
-            {/* Top Row: Image + Name + Action Buttons */}
-            <div className="flex items-center justify-between gap-3">
+          <div key={c.id} className="p-4">
+            {/* Desktop Layout */}
+            <div className="hidden md:flex items-center gap-4">
+              {/* Image + Name */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {(c.imageUrl || c.image_url) && (
                   <img src={c.imageUrl || c.image_url} alt={c.name} className="w-12 h-12 object-cover rounded flex-shrink-0" />
@@ -162,6 +163,26 @@ const Categories = () => {
                   <p className="text-xs text-muted-foreground truncate">/{c.slug}</p>
                 </div>
               </div>
+              
+              {/* Toggles */}
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+                  <Switch 
+                    checked={c.showInHeader !== false} 
+                    onCheckedChange={() => toggleHeader(c)}
+                  />
+                  <span className="text-muted-foreground">Show in header</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+                  <Switch 
+                    checked={c.showInFooter === true || c.showInFooter === undefined || c.showInFooter === null} 
+                    onCheckedChange={() => toggleFooter(c)}
+                  />
+                  <span className="text-muted-foreground">Show in footer</span>
+                </label>
+              </div>
+              
+              {/* Action Buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button variant="outline" size="icon" onClick={() => openImageDialog(c)} title="Upload image">
                   <ImagePlus className="w-4 h-4" />
@@ -171,23 +192,47 @@ const Categories = () => {
                 </Button>
               </div>
             </div>
-            
-            {/* Bottom Row: Toggles */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <Switch 
-                  checked={c.showInHeader !== false} 
-                  onCheckedChange={() => toggleHeader(c)}
-                />
-                <span className="text-muted-foreground">Show in header</span>
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch 
-                  checked={c.showInFooter === true || c.showInFooter === undefined || c.showInFooter === null} 
-                  onCheckedChange={() => toggleFooter(c)}
-                />
-                <span className="text-muted-foreground">Show in footer</span>
-              </label>
+
+            {/* Mobile Layout */}
+            <div className="md:hidden space-y-3">
+              {/* Top Row: Image + Name + Action Buttons */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {(c.imageUrl || c.image_url) && (
+                    <img src={c.imageUrl || c.image_url} alt={c.name} className="w-12 h-12 object-cover rounded flex-shrink-0" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{c.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">/{c.slug}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button variant="outline" size="icon" onClick={() => openImageDialog(c)} title="Upload image">
+                    <ImagePlus className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => del(c.id)} title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Bottom Row: Toggles */}
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch 
+                    checked={c.showInHeader !== false} 
+                    onCheckedChange={() => toggleHeader(c)}
+                  />
+                  <span className="text-muted-foreground">Show in header</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch 
+                    checked={c.showInFooter === true || c.showInFooter === undefined || c.showInFooter === null} 
+                    onCheckedChange={() => toggleFooter(c)}
+                  />
+                  <span className="text-muted-foreground">Show in footer</span>
+                </label>
+              </div>
             </div>
           </div>
         ))}
