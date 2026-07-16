@@ -70,9 +70,6 @@ const DieraHeader = () => {
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
-    const CACHE_KEY = 'diera-header-categories';
-    const CACHE_TIMESTAMP_KEY = 'diera-header-categories-timestamp';
-    
     // Filter: show only if showInHeader is explicitly true
     const filterHeader = (list: any[]) => {
       const filtered = list.filter((c) => {
@@ -85,35 +82,21 @@ const DieraHeader = () => {
       return filtered;
     };
 
-    // Fetch categories from API
-    api.get<{ name: string; slug: string; showInHeader?: boolean; show_in_header?: boolean; showInFooter?: boolean; show_in_footer?: boolean }[]>('/categories')
+    // Force fresh fetch - clear all caches
+    localStorage.removeItem('diera-categories');
+    sessionStorage.clear();
+
+    // Fetch with cache-busting timestamp
+    api.get<{ name: string; slug: string; showInHeader?: boolean; show_in_header?: boolean; showInFooter?: boolean; show_in_footer?: boolean }[]>(`/categories?_=${Date.now()}`)
       .then((data) => {
         console.log('Raw API response:', data);
         const filtered = filterHeader(data);
         setCats(data);
         setHeaderCats(filtered);
-        
-        // Save to localStorage after successful fetch
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
-        console.log('Categories fetched and saved to localStorage');
+        // Don't cache categories in localStorage to avoid stale data
       })
       .catch((err) => { 
         console.error('Failed to fetch categories:', err);
-        
-        // If fetch fails, try to use cached data as fallback
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-          try {
-            const data = JSON.parse(cachedData);
-            const filtered = filterHeader(data);
-            setCats(data);
-            setHeaderCats(filtered);
-            console.log('Using cached categories as fallback');
-          } catch (e) {
-            console.error('Failed to parse cached categories:', e);
-          }
-        }
       });
   }, []);
 
