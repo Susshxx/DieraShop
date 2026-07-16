@@ -79,7 +79,8 @@ export const sendEmail = async ({ to, subject, html, otpCode, templateParams = {
   try {
     const params = {
       to_email: to,
-      to_name: templateParams.to_name || to.split('@')[0], // Extract name from email
+      email: to, // Add this for EmailJS template's {{email}} variable
+      to_name: templateParams.to_name || to.split('@')[0],
       user_email: to,
       reply_to: to,
       from_name: 'Diera Shop',
