@@ -30,6 +30,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ResetPassword from "./pages/auth/ResetPassword";
+import SetNewPassword from "./pages/auth/SetNewPassword";
 import GoogleCallback from "./pages/auth/GoogleCallback";
 import EsewaSuccess from "./pages/payment/EsewaSuccess";
 import EsewaFailure from "./pages/payment/EsewaFailure";
@@ -95,6 +96,7 @@ const App = () => (
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/signup" element={<Signup />} />
                 <Route path="/auth/reset" element={<ResetPassword />} />
+                <Route path="/auth/reset-password/:token" element={<SetNewPassword />} />
                 <Route path="/auth/callback" element={<GoogleCallback />} />
                 
                 <Route path="/payment/esewa/success" element={<EsewaSuccess />} />

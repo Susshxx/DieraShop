@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { z } from 'zod';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import SignupOtp from '../models/SignupOtp.js';
+import PasswordReset from '../models/PasswordReset.js';
 import { signToken } from '../utils/jwt.js';
 import { generateOtp, hashOtp, compareOtp } from '../utils/otp.js';
 import { sendEmail, otpEmailHtml } from '../utils/email.js';
@@ -288,6 +290,129 @@ router.post('/logout', (_req, res) => {
   res.clearCookie('auth_token');
   res.clearCookie('auth_redirect');
   res.json({ ok: true });
+});
+
+// Password Reset: Request reset link
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const schema = z.object({
+      email: z.string().email(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid email' });
+
+    const { email } = parsed.data;
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.json({ ok: true, message: 'If the email exists, a reset link has been sent.' });
+    }
+
+    // Generate secure random token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(resetToken, 10);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Save reset token to database
+    await PasswordReset.create({
+      email: email.toLowerCase(),
+      tokenHash,
+      expiresAt,
+    });
+
+    // Create reset link
+    const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password/${resetToken}?email=${encodeURIComponent(email)}`;
+
+    // Send email with reset link
+    const resetEmailHtml = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fdf2f4;border-radius:12px;">
+        <h2 style="color:#9d174d;">Diera Shop — Password Reset</h2>
+        <p>Hi there,</p>
+        <p>You requested to reset your password. Click the button below to set a new password:</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${resetLink}" style="display:inline-block;padding:12px 32px;background:#be185d;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Reset Password</a>
+        </div>
+        <p style="color:#666;font-size:14px;">This link will expire in 1 hour.</p>
+        <p style="color:#666;font-size:14px;">If you didn't request this, please ignore this email.</p>
+        <p style="color:#999;font-size:12px;margin-top:30px;">Or copy and paste this link: ${resetLink}</p>
+      </div>
+    `;
+
+    await sendEmail({
+      to: email,
+      subject: 'Reset Your Diera Shop Password',
+      html: resetEmailHtml,
+      templateParams: {
+        reset_link: resetLink,
+        user_name: user.name || 'there',
+      },
+    });
+
+    res.json({ ok: true, message: 'If the email exists, a reset link has been sent.' });
+  } catch (err) {
+    console.error('forgot-password error:', err);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// Password Reset: Verify token and reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const schema = z.object({
+      email: z.string().email(),
+      token: z.string().min(32),
+      newPassword: z.string().min(8).max(128),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid input' });
+
+    const { email, token, newPassword } = parsed.data;
+
+    // Find the most recent unused reset token
+    const resetRecord = await PasswordReset.findOne({
+      email: email.toLowerCase(),
+      consumedAt: null,
+    }).sort({ createdAt: -1 });
+
+    if (!resetRecord) {
+      return res.status(400).json({ error: 'Invalid or expired reset link' });
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'Reset link has expired' });
+    }
+
+    if (resetRecord.attempts >= 5) {
+      return res.status(429).json({ error: 'Too many attempts. Please request a new reset link.' });
+    }
+
+    // Verify token
+    const valid = await bcrypt.compare(token, resetRecord.tokenHash);
+    if (!valid) {
+      resetRecord.attempts += 1;
+      await resetRecord.save();
+      return res.status(400).json({ error: 'Invalid reset link' });
+    }
+
+    // Update user password
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    // Mark token as consumed
+    resetRecord.consumedAt = new Date();
+    await resetRecord.save();
+
+    res.json({ ok: true, message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('reset-password error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
 });
 
 export default router;

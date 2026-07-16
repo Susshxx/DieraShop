@@ -122,3 +122,17 @@ export const orderEmailHtml = ({ orderId, total, status }) => `
     <p style="color:#666;font-size:14px;">Thank you for shopping with Diera Shop, Nepal.</p>
   </div>
 `;
+
+export const passwordResetEmailHtml = (resetLink, userName = 'there') => `
+  <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fdf2f4;border-radius:12px;">
+    <h2 style="color:#9d174d;">Diera Shop — Password Reset</h2>
+    <p>Hi ${userName},</p>
+    <p>You requested to reset your password. Click the button below to set a new password:</p>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${resetLink}" style="display:inline-block;padding:12px 32px;background:#be185d;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Reset Password</a>
+    </div>
+    <p style="color:#666;font-size:14px;">This link will expire in 1 hour.</p>
+    <p style="color:#666;font-size:14px;">If you didn't request this, please ignore this email.</p>
+    <p style="color:#999;font-size:12px;margin-top:30px;word-break:break-all;">Or copy and paste this link: ${resetLink}</p>
+  </div>
+`;
