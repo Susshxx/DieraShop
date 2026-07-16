@@ -437,34 +437,61 @@ const DieraHeader = () => {
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
+    const CACHE_KEY = 'diera-categories';
+    const CACHE_TIMESTAMP_KEY = 'diera-categories-timestamp';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
     // Filter: show only if showInHeader is explicitly true
     const filterHeader = (list: any[]) => {
       const filtered = list.filter((c) => {
         const val = c.showInHeader ?? c.show_in_header;
-        // Check for explicit true or 1
         return val === true || val === 1;
       });
-      console.log('All categories:', list);
-      console.log('Filtered for header (showInHeader=true):', filtered);
       return filtered;
     };
 
-    // Force fresh fetch - clear all caches
-    localStorage.removeItem('diera-categories');
-    sessionStorage.clear();
-
-    // Fetch with cache-busting timestamp
-    api.get<{ name: string; slug: string; showInHeader?: boolean; show_in_header?: boolean; showInFooter?: boolean; show_in_footer?: boolean }[]>(`/categories?_=${Date.now()}`)
-      .then((data) => {
-        console.log('Raw API response:', data);
+    const fetchCategories = async () => {
+      try {
+        const data = await api.get<{ name: string; slug: string; showInHeader?: boolean; show_in_header?: boolean; showInFooter?: boolean; show_in_footer?: boolean }[]>('/categories');
+        
+        // Save to localStorage with timestamp
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
         const filtered = filterHeader(data);
         setCats(data);
         setHeaderCats(filtered);
-        // Don't cache categories in localStorage to avoid stale data
-      })
-      .catch((err) => { 
+        
+        console.log('Categories fetched and cached:', data);
+      } catch (err) {
         console.error('Failed to fetch categories:', err);
-      });
+      }
+    };
+
+    // Try to load from cache first
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    
+    if (cachedData && cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp);
+      
+      if (age < CACHE_DURATION) {
+        // Use cached data if it's fresh
+        try {
+          const data = JSON.parse(cachedData);
+          const filtered = filterHeader(data);
+          setCats(data);
+          setHeaderCats(filtered);
+          console.log('Using cached categories (age: ' + Math.round(age / 1000) + 's)');
+          return; // Don't fetch from server
+        } catch (e) {
+          console.error('Failed to parse cached categories:', e);
+        }
+      }
+    }
+    
+    // If no cache or cache is stale, fetch from server
+    fetchCategories();
   }, []);
 
   const handleSignOut = async () => {
