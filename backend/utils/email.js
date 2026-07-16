@@ -24,10 +24,10 @@ export const isEmailEnabled = () => {
   return enabled;
 };
 
-const sendViaEmailJS = async (templateParams) => {
+const sendViaEmailJS = async (templateParams, templateId = null) => {
   const body = {
     service_id: process.env.EMAILJS_SERVICE_ID,
-    template_id: process.env.EMAILJS_TEMPLATE_ID,
+    template_id: templateId || process.env.EMAILJS_TEMPLATE_ID,
     user_id: process.env.EMAILJS_PUBLIC_KEY,
     template_params: templateParams,
   };
@@ -37,7 +37,7 @@ const sendViaEmailJS = async (templateParams) => {
 
   console.log('[emailjs] Attempting to send email...');
   console.log('[emailjs] Service ID:', process.env.EMAILJS_SERVICE_ID);
-  console.log('[emailjs] Template ID:', process.env.EMAILJS_TEMPLATE_ID);
+  console.log('[emailjs] Template ID:', body.template_id);
   console.log('[emailjs] Recipient:', templateParams.to_email);
 
   const res = await fetch(EMAILJS_API, {
@@ -69,7 +69,7 @@ export const logOtpToConsole = (email, code) => {
   console.log('========================================\n');
 };
 
-export const sendEmail = async ({ to, subject, html, otpCode, templateParams = {} }) => {
+export const sendEmail = async ({ to, subject, html, otpCode, templateParams = {}, templateId = null }) => {
   if (!isEmailEnabled()) {
     if (otpCode) logOtpToConsole(to, otpCode);
     else console.log(`[email console] To: ${to} | ${subject}`);
@@ -79,7 +79,7 @@ export const sendEmail = async ({ to, subject, html, otpCode, templateParams = {
   try {
     const params = {
       to_email: to,
-      to_name: to.split('@')[0], // Extract name from email
+      to_name: templateParams.to_name || to.split('@')[0], // Extract name from email
       user_email: to,
       reply_to: to,
       from_name: 'Diera Shop',
@@ -93,7 +93,7 @@ export const sendEmail = async ({ to, subject, html, otpCode, templateParams = {
     console.log('[emailjs] Sending email to:', to);
     console.log('[emailjs] Template params:', JSON.stringify(params, null, 2));
     
-    await sendViaEmailJS(params);
+    await sendViaEmailJS(params, templateId);
     console.log('[emailjs] Email sent successfully to:', to);
     return { ok: true, stub: false };
   } catch (err) {

@@ -346,7 +346,9 @@ router.post('/forgot-password', async (req, res) => {
       templateParams: {
         reset_link: resetLink,
         user_name: user.name || 'there',
+        to_name: user.name || email.split('@')[0],
       },
+      templateId: process.env.EMAILJS_TEMPLATE_ID_RESET, // Use separate template for password reset
     });
 
     res.json({ ok: true, message: 'If the email exists, a reset link has been sent.' });
