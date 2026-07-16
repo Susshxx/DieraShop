@@ -52,7 +52,8 @@ const Signup = () => {
       const { token, user } = await authApi.verifyOtp(form.email, otp);
       setAuth(token, user);
       toast.success("Account created — welcome to Diera Shop!");
-      nav("/account", { replace: true });
+      // Redirect to home page after successful signup
+      nav("/", { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -61,7 +62,7 @@ const Signup = () => {
   };
 
   const handleGoogle = () => {
-    window.location.href = authApi.googleUrl("/account");
+    window.location.href = authApi.googleUrl("/");
   };
 
   return (

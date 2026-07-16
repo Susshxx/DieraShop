@@ -30,7 +30,9 @@ const Login = () => {
       const { token, user } = await authApi.login(email, password);
       setAuth(token, user);
       toast.success("Welcome back!");
-      nav(from, { replace: true });
+      // Redirect regular users to home, admins to dashboard
+      const redirectPath = user.role === 'admin' ? '/admin' : '/';
+      nav(redirectPath, { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
     } finally {

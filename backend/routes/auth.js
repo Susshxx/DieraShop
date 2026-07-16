@@ -9,7 +9,7 @@ import SignupOtp from '../models/SignupOtp.js';
 import PasswordReset from '../models/PasswordReset.js';
 import { signToken } from '../utils/jwt.js';
 import { generateOtp, hashOtp, compareOtp } from '../utils/otp.js';
-import { sendEmail, otpEmailHtml } from '../utils/email.js';
+import { sendEmail, otpEmailHtml, isEmailEnabled } from '../utils/email.js';
 import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
@@ -326,23 +326,30 @@ router.post('/forgot-password', async (req, res) => {
 
     console.log('[forgot-password] Sending reset email to:', email);
     console.log('[forgot-password] Reset link:', resetLink);
+    console.log('[forgot-password] Using template ID:', process.env.EMAILJS_TEMPLATE_ID_RESET);
+    console.log('[forgot-password] EmailJS enabled:', isEmailEnabled());
 
-    // Send email with reset link
-    await sendEmail({
+    // Send email with reset link - using exact variable names from EmailJS template
+    const emailResult = await sendEmail({
       to: email,
       subject: 'Reset Your Diera Shop Password',
       html: '', // Not used by EmailJS, but kept for fallback
       templateParams: {
         to_name: user.name || email.split('@')[0],
-        to_email: email,
-        user_email: email,
         reset_link: resetLink,
-        from_name: 'Diera Shop',
       },
       templateId: process.env.EMAILJS_TEMPLATE_ID_RESET, // Use separate template for password reset
     });
 
-    console.log('[forgot-password] Email sent successfully');
+    if (emailResult.stub) {
+      console.warn('[forgot-password] Email sent to console (EmailJS not configured or failed)');
+      if (emailResult.emailError) {
+        console.error('[forgot-password] EmailJS error:', emailResult.emailError);
+      }
+    } else {
+      console.log('[forgot-password] Email sent successfully via EmailJS');
+    }
+    
     res.json({ ok: true, message: 'If the email exists, a reset link has been sent.' });
   } catch (err) {
     console.error('forgot-password error:', err);
