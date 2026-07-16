@@ -150,7 +150,7 @@ const Categories = () => {
               </label>
               <label className="flex items-center gap-2 text-xs">
                 <Switch 
-                  checked={c.showInFooter !== false} 
+                  checked={c.showInFooter === true || c.showInFooter === undefined || c.showInFooter === null} 
                   onCheckedChange={() => toggleFooter(c)}
                 />
                 <span className="text-muted-foreground">Show in footer</span>

@@ -6,7 +6,7 @@ import NotificationBell from "@/components/user/NotificationBell";
 import ThemeSwitcher from "@/components/user/ThemeSwitcher";
 import { useState, useEffect } from "react";
 import { api, clearToken } from "@/lib/api";
-import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut, Bell, ShieldCheck, Grid3x3, Glasses, Watch, Gem, Shirt, ShoppingBag, Crown, Footprints, BadgePercent } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, Sparkles, Info, Palette, User, Package, MessageSquare, LogOut, Bell, ShieldCheck, Grid3x3, Glasses, Watch, Gem, Shirt, ShoppingBag, CircleDot, Footprints, BadgePercent } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,8 @@ const getCategoryIcon = (categoryName: string, categorySlug: string) => {
   if (name.includes('earring') || slug.includes('earring')) return Gem;
   if (name.includes('shoe') || slug.includes('shoe')) return Footprints;
   if (name.includes('bag') || slug.includes('bag')) return ShoppingBag;
-  if (name.includes('cap') || name.includes('hat') || slug.includes('cap')) return Crown;
+  if (name.includes('cap') || slug.includes('cap')) return CircleDot;
+  if (name.includes('hat') || slug.includes('hat')) return CircleDot;
   if (name.includes('glass') || slug.includes('glass')) return Glasses;
   if (name.includes('hoodie') || name.includes('jacket') || slug.includes('hoodie')) return Shirt;
   if (name.includes('trouser') || name.includes('pant') || slug.includes('trouser')) return Shirt;
