@@ -78,8 +78,10 @@ const DieraHeader = () => {
     const filterHeader = (list: any[]) => {
       const filtered = list.filter((c) => {
         const val = c.showInHeader ?? c.show_in_header;
+        console.log(`Category "${c.name}": showInHeader=${c.showInHeader}, show_in_header=${c.show_in_header}, val=${val}`);
         return val === true;
       });
+      console.log('Header: Total categories:', list.length, 'Filtered for header:', filtered.length);
       return filtered;
     };
 
@@ -118,7 +120,10 @@ const DieraHeader = () => {
           setHeaderCats(filtered);
           console.log('Header: Using cached categories (age: ' + Math.round(age / 1000) + 's)');
           console.log('Header: Filtered cached categories for header:', filtered);
-          return; // Don't fetch from server
+          
+          // Also fetch fresh data in background to update cache
+          fetchCategories();
+          return;
         } catch (e) {
           console.error('Failed to parse cached categories:', e);
         }
