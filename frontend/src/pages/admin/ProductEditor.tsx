@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "@/lib/api";
+import { formatNPR } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ const ProductEditor = () => {
   const [cats, setCats] = useState<any[]>([]);
   const [form, setForm] = useState<any>({
     name: "", slug: "", description: "", price: 0, stock: 0,
+    originalPriceNPR: null, discountPercent: 0,
     images: [] as string[], sizes: [] as string[], colors: [] as string[],
     colorImageMap: {} as Record<string, number>,
     variantStock: {} as Record<string, number>,
@@ -103,6 +105,8 @@ const ProductEditor = () => {
       slug: form.slug || slugify(form.name),
       description: form.description || "",
       price_npr: Number(form.price),
+      originalPriceNPR: form.originalPriceNPR ? Number(form.originalPriceNPR) : null,
+      discountPercent: form.discountPercent ? Number(form.discountPercent) : 0,
       stock: Number(form.stock),
       images: form.images || [],
       sizes: form.sizes || [],
@@ -115,7 +119,7 @@ const ProductEditor = () => {
     };
     try {
       if (isNew) {
-        const newProduct = await api.post("/products", payload);
+        const newProduct = await api.post<any>("/products", payload);
         toast.success("Product created successfully!");
         nav(`/admin/products/${newProduct.id}`);
       } else {
@@ -198,6 +202,71 @@ const ProductEditor = () => {
               }} 
               required 
             />
+          </div>
+          <div>
+            <Label>Original Price (NPR) - Optional</Label>
+            <Input 
+              type="number" 
+              step="0.01" 
+              value={form.originalPriceNPR || ''} 
+              placeholder="Leave empty if no discount"
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                const originalPrice = val === '' ? null : parseFloat(val);
+                
+                // Auto-calculate discount percentage if both prices exist
+                let discountPercent = 0;
+                if (originalPrice && form.price && originalPrice > form.price) {
+                  discountPercent = Math.round(((originalPrice - form.price) / originalPrice) * 100);
+                }
+                
+                setForm({ 
+                  ...form, 
+                  originalPriceNPR: originalPrice,
+                  discountPercent: discountPercent
+                });
+              }} 
+            />
+            {form.originalPriceNPR && form.price && form.originalPriceNPR > form.price && (
+              <p className="text-xs text-green-600 mt-1">
+                {form.discountPercent}% discount ({formatNPR(form.originalPriceNPR - form.price)} off)
+              </p>
+            )}
+          </div>
+        </div>
+        
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Discount % - Optional</Label>
+            <Input 
+              type="number" 
+              min="0"
+              max="100"
+              step="1"
+              value={form.discountPercent || ''} 
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                const discountPercent = val === '' ? 0 : parseInt(val);
+                
+                // Auto-calculate original price if discount is provided
+                let originalPrice = form.originalPriceNPR;
+                if (discountPercent > 0 && form.price) {
+                  originalPrice = Math.round(form.price / (1 - discountPercent / 100));
+                }
+                
+                setForm({ 
+                  ...form, 
+                  discountPercent: discountPercent,
+                  originalPriceNPR: discountPercent > 0 ? originalPrice : null
+                });
+              }} 
+            />
+            {form.discountPercent > 0 && form.originalPriceNPR && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Original price calculated: {formatNPR(form.originalPriceNPR)}
+              </p>
+            )}
           </div>
           <div>
             <Label>Category</Label>

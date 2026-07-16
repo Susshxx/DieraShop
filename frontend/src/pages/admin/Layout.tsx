@@ -25,6 +25,9 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+  const [chatCount, setChatCount] = useState(0);
+  const [userCount, setUserCount] = useState(0);
   const [banners, setBanners] = useState<Array<{ id: string; type: string; message: string }>>([]);
 
   const loadNotificationCount = async () => {
@@ -34,6 +37,30 @@ const AdminLayout = () => {
       setNotificationCount(count ?? 0);
     } catch (error) {
       console.error("Failed to load notification count:", error);
+    }
+  };
+  
+  const loadCounts = async () => {
+    if (!user) return;
+    try {
+      // Load pending orders count
+      const orders = await api.get<any[]>("/admin/orders");
+      const pendingOrders = orders.filter(o => ['pending', 'awaiting_payment'].includes(o.status));
+      setOrderCount(pendingOrders.length);
+      
+      // Load unread chat conversations count
+      const conversations = await api.get<any[]>("/admin/chats");
+      const unreadCount = conversations.filter(c => c.unread_count > 0).length;
+      setChatCount(unreadCount);
+      
+      // Load new users (registered in last 7 days)
+      const users = await api.get<any[]>("/admin/users");
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const newUsers = users.filter(u => new Date(u.created_at) > sevenDaysAgo);
+      setUserCount(newUsers.length);
+    } catch (error) {
+      console.error("Failed to load counts:", error);
     }
   };
 
@@ -49,10 +76,16 @@ const AdminLayout = () => {
   useEffect(() => {
     if (!user) return;
     loadNotificationCount();
+    loadCounts();
+    
+    // Refresh counts every 30 seconds
+    const interval = setInterval(loadCounts, 30000);
+    
     const socket = connectSocket();
     
     const handleNewNotification = (data: any) => {
       loadNotificationCount();
+      loadCounts(); // Refresh all counts
       // Show banner for new orders, chats, and messages
       if (data?.type === "order") {
         addBanner("order", "New order received!");
@@ -72,6 +105,7 @@ const AdminLayout = () => {
     return () => { 
       socket.off("notification:new", handleNewNotification);
       socket.off("notifications:read", handleNotificationsRead);
+      clearInterval(interval);
     };
   }, [user]);
 
@@ -88,18 +122,32 @@ const AdminLayout = () => {
           <Link to="/admin" className="text-lg font-semibold">Diera · Admin</Link>
         </div>
         <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
-          {nav.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded text-sm ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`
-              }
-            >
-              <n.icon className="w-4 h-4" /> {n.label}
-            </NavLink>
-          ))}
+          {nav.map((n) => {
+            // Determine badge count for each nav item
+            let badgeCount = 0;
+            if (n.to === "/admin/orders") badgeCount = orderCount;
+            else if (n.to === "/admin/chats") badgeCount = chatCount;
+            else if (n.to === "/admin/notifications") badgeCount = notificationCount;
+            else if (n.to === "/admin/users") badgeCount = userCount;
+            
+            return (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                end={n.end}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-2 rounded text-sm relative ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`
+                }
+              >
+                <n.icon className="w-4 h-4" /> {n.label}
+                {badgeCount > 0 && (
+                  <span className="ml-auto bg-primary text-primary-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
         <div className="p-2 border-t border-sidebar-border space-y-1">
           <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded text-sm text-sidebar-foreground hover:bg-sidebar-accent"><Home className="w-4 h-4" /> View site</Link>
@@ -147,19 +195,33 @@ const AdminLayout = () => {
               </SheetHeader>
               <div className="flex flex-col h-[calc(100vh-5rem)]">
                 <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-                  {nav.map((n) => (
-                    <NavLink
-                      key={n.to}
-                      to={n.to}
-                      end={n.end}
-                      onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-2 px-3 py-2 rounded text-sm ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`
-                      }
-                    >
-                      <n.icon className="w-4 h-4" /> {n.label}
-                    </NavLink>
-                  ))}
+                  {nav.map((n) => {
+                    // Determine badge count for each nav item
+                    let badgeCount = 0;
+                    if (n.to === "/admin/orders") badgeCount = orderCount;
+                    else if (n.to === "/admin/chats") badgeCount = chatCount;
+                    else if (n.to === "/admin/notifications") badgeCount = notificationCount;
+                    else if (n.to === "/admin/users") badgeCount = userCount;
+                    
+                    return (
+                      <NavLink
+                        key={n.to}
+                        to={n.to}
+                        end={n.end}
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded text-sm relative ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`
+                        }
+                      >
+                        <n.icon className="w-4 h-4" /> {n.label}
+                        {badgeCount > 0 && (
+                          <span className="ml-auto bg-primary text-primary-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
+                        )}
+                      </NavLink>
+                    );
+                  })}
                 </nav>
                 <div className="p-2 pb-8 border-t border-border space-y-1">
                   <Link 

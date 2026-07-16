@@ -20,6 +20,9 @@ interface CartCtx {
   clear: () => void;
   total: number;
   count: number;
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 const Ctx = createContext<CartCtx | undefined>(undefined);
@@ -34,6 +37,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
 
   // When auth resolves, load the correct cart from localStorage
   useEffect(() => {
@@ -110,7 +116,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const count = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <Ctx.Provider value={{ items, add, remove, setQty, clear, total, count }}>
+    <Ctx.Provider value={{ items, add, remove, setQty, clear, total, count, isCartOpen, openCart, closeCart }}>
       {children}
     </Ctx.Provider>
   );

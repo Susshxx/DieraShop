@@ -7,10 +7,12 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "seed": "node scripts/seed.js",
-    "cleanup": "node scripts/cleanupCollections.js"
+    "cleanup": "node scripts/cleanupCollections.js",
+    "build:indexes": "node scripts/buildIndexes.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "diera-shop": "file:..",

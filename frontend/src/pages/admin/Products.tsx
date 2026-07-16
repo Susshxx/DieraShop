@@ -11,7 +11,7 @@ const Products = () => {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   
   const load = async () => {
-    const data = await api.get<any[]>("/products?active=false");
+    const data = await api.get<any[]>("/products?active=false&populate=category");
     setItems(data || []);
   };
   useEffect(() => { load(); }, []);
@@ -47,7 +47,14 @@ const Products = () => {
       <div className="border border-border rounded-lg bg-card overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-muted text-xs uppercase">
-            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Category</th><th className="text-left p-3">Price</th><th className="text-left p-3">Stock</th><th className="p-3"></th></tr>
+            <tr>
+              <th className="text-left p-3">Name</th>
+              <th className="text-left p-3">Category</th>
+              <th className="text-left p-3">Original Price</th>
+              <th className="text-left p-3">Price</th>
+              <th className="text-left p-3">Stock</th>
+              <th className="p-3"></th>
+            </tr>
           </thead>
           <tbody>
             {items.map((p) => (
@@ -60,8 +67,24 @@ const Products = () => {
                       {!p.active && <span className="text-xs text-muted-foreground">(inactive)</span>}
                     </div>
                   </td>
-                  <td className="p-3">{p.categories?.name || "—"}</td>
-                  <td className="p-3">{formatNPR(p.price_npr ?? p.price)}</td>
+                  <td className="p-3">{p.categoryId?.name || p.categories?.name || p.category?.name || "—"}</td>
+                  <td className="p-3">
+                    {(p.originalPriceNPR || p.original_price_npr) ? (
+                      <div className="flex flex-col">
+                        <span className="line-through text-muted-foreground text-xs">
+                          {formatNPR(p.originalPriceNPR || p.original_price_npr)}
+                        </span>
+                        {(p.discountPercent || p.discount_percent) > 0 && (
+                          <span className="text-xs text-green-600 font-semibold">
+                            {p.discountPercent || p.discount_percent}% OFF
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="p-3 font-semibold">{formatNPR(p.priceNPR || p.price_npr || p.price)}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <span>{getTotalStock(p)}</span>
@@ -86,7 +109,7 @@ const Products = () => {
                 </tr>
                 {expandedProduct === p.id && hasVariants(p) && (
                   <tr className="border-t border-border bg-muted/30">
-                    <td colSpan={5} className="p-4">
+                    <td colSpan={6} className="p-4">
                       <div className="text-xs">
                         <p className="font-semibold mb-2 text-sm">Variant Stock Details:</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -105,7 +128,7 @@ const Products = () => {
                 )}
               </>
             ))}
-            {items.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No products yet — create your first one.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No products yet — create your first one.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -12,7 +12,7 @@ const Login = () => {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, loading, setAuth } = useAuth();
-  const from = (loc.state as { from?: { pathname: string } })?.from?.pathname || "/account";
+  const from = (loc.state as { from?: { pathname: string } })?.from?.pathname || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

@@ -7,49 +7,81 @@ import { processImageToWebp, bufferToDataUri } from '../utils/imageProcessor.js'
 
 const router = Router();
 
-const mapProduct = (p) => ({
-  id: p._id,
-  _id: p._id,
-  name: p.name,
-  slug: p.slug,
-  description: p.description,
-  price_npr: p.priceNPR,
-  priceNPR: p.priceNPR,
-  price: p.priceNPR,
-  category_id: p.categoryId,
-  categoryId: p.categoryId,
-  stock: p.stock,
-  images: p.images,
-  sizes: p.sizes,
-  colors: p.colors,
-  colorImageMap: p.colorImageMap ? Object.fromEntries(p.colorImageMap) : {},
-  variantStock: p.variantStock ? Object.fromEntries(p.variantStock) : {},
-  tags: p.tags,
-  featured: p.featured,
-  active: p.active,
-  created_at: p.createdAt,
-  updated_at: p.updatedAt,
-  categories: p.categoryId && typeof p.categoryId === 'object' ? { name: p.categoryId.name } : undefined,
-});
+const mapProduct = (p) => {
+  // Handle colorImageMap and variantStock which can be Map, Object, or undefined
+  let colorImageMap = {};
+  let variantStock = {};
+  
+  if (p.colorImageMap) {
+    if (p.colorImageMap instanceof Map) {
+      colorImageMap = Object.fromEntries(p.colorImageMap);
+    } else if (typeof p.colorImageMap === 'object') {
+      colorImageMap = p.colorImageMap;
+    }
+  }
+  
+  if (p.variantStock) {
+    if (p.variantStock instanceof Map) {
+      variantStock = Object.fromEntries(p.variantStock);
+    } else if (typeof p.variantStock === 'object') {
+      variantStock = p.variantStock;
+    }
+  }
+  
+  return {
+    id: p._id,
+    _id: p._id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description,
+    price_npr: p.priceNPR,
+    priceNPR: p.priceNPR,
+    price: p.priceNPR,
+    originalPriceNPR: p.originalPriceNPR,
+    discountPercent: p.discountPercent,
+    category_id: p.categoryId,
+    categoryId: p.categoryId,
+    stock: p.stock,
+    images: p.images,
+    sizes: p.sizes,
+    colors: p.colors,
+    colorImageMap,
+    variantStock,
+    tags: p.tags,
+    featured: p.featured,
+    active: p.active,
+    created_at: p.createdAt,
+    updated_at: p.updatedAt,
+    categories: p.categoryId && typeof p.categoryId === 'object' ? { name: p.categoryId.name } : undefined,
+  };
+};
 
 router.get('/', async (req, res) => {
   const filter = {};
   if (req.query.featured === 'true') filter.featured = true;
   if (req.query.active !== 'false') filter.active = true;
   if (req.query.categoryId) filter.categoryId = req.query.categoryId;
-  const limit = Math.min(Number(req.query.limit) || 50, 100);
-  const products = await Product.find(filter).populate('categoryId', 'name slug').sort({ createdAt: -1 }).limit(limit);
+  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  
+  // Only populate category if explicitly requested (saves significant time)
+  const query = Product.find(filter).sort({ createdAt: -1 }).limit(limit).lean();
+  
+  if (req.query.populate === 'category') {
+    query.populate('categoryId', 'name slug');
+  }
+  
+  const products = await query;
   res.json(products.map(mapProduct));
 });
 
 router.get('/slug/:slug', async (req, res) => {
-  const product = await Product.findOne({ slug: req.params.slug, active: true });
+  const product = await Product.findOne({ slug: req.params.slug, active: true }).lean();
   if (!product) return res.status(404).json({ error: 'Not found' });
   res.json(mapProduct(product));
 });
 
 router.get('/:id', async (req, res) => {
-  const product = await Product.findById(req.params.id).populate('categoryId', 'name slug');
+  const product = await Product.findById(req.params.id).populate('categoryId', 'name slug').lean();
   if (!product) return res.status(404).json({ error: 'Not found' });
   res.json(mapProduct(product));
 });
@@ -61,6 +93,8 @@ router.post('/', verifyToken, requireAdmin, async (req, res) => {
     slug: body.slug,
     description: body.description || '',
     priceNPR: body.price_npr ?? body.priceNPR ?? 0,
+    originalPriceNPR: body.originalPriceNPR ?? body.original_price_npr ?? null,
+    discountPercent: body.discountPercent ?? body.discount_percent ?? 0,
     categoryId: body.category_id || body.categoryId || null,
     stock: body.stock ?? 0,
     images: body.images || [],
@@ -84,6 +118,8 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
       slug: body.slug,
       description: body.description,
       priceNPR: body.price_npr ?? body.priceNPR,
+      originalPriceNPR: body.originalPriceNPR ?? body.original_price_npr,
+      discountPercent: body.discountPercent ?? body.discount_percent,
       categoryId: body.category_id || body.categoryId,
       stock: body.stock,
       images: body.images,

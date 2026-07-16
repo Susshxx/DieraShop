@@ -86,15 +86,36 @@ const Categories = () => {
 
   const toggleHeader = async (category: any) => {
     try {
-      const newValue = !category.showInHeader;
+      // DB default is true; treat undefined/null as true
+      const current = category.showInHeader ?? category.show_in_header ?? true;
+      const newValue = !current;
       await api.put(`/categories/${category.id}`, {
         name: category.name,
         slug: category.slug,
         sortOrder: category.sortOrder,
-        showInHeader: newValue
+        showInHeader: newValue,
+        showInFooter: category.showInFooter ?? category.show_in_footer ?? true
       });
       load();
       toast.success(newValue ? "Added to header" : "Removed from header");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+    }
+  };
+
+  const toggleFooter = async (category: any) => {
+    try {
+      const current = category.showInFooter ?? category.show_in_footer ?? true;
+      const newValue = !current;
+      await api.put(`/categories/${category.id}`, {
+        name: category.name,
+        slug: category.slug,
+        sortOrder: category.sortOrder,
+        showInHeader: category.showInHeader ?? category.show_in_header ?? true,
+        showInFooter: newValue
+      });
+      load();
+      toast.success(newValue ? "Added to footer" : "Removed from footer");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update");
     }
@@ -126,6 +147,13 @@ const Categories = () => {
                   onCheckedChange={() => toggleHeader(c)}
                 />
                 <span className="text-muted-foreground">Show in header</span>
+              </label>
+              <label className="flex items-center gap-2 text-xs">
+                <Switch 
+                  checked={c.showInFooter !== false} 
+                  onCheckedChange={() => toggleFooter(c)}
+                />
+                <span className="text-muted-foreground">Show in footer</span>
               </label>
               <Button variant="outline" size="icon" onClick={() => openImageDialog(c)} title="Upload image">
                 <ImagePlus className="w-4 h-4" />

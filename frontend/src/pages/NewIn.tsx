@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import { api } from "@/lib/api";
-import { formatNPR } from "@/hooks/useCart";
-import { isNewProduct } from "@/lib/productUtils";
-import NewBadge from "@/components/product/NewBadge";
+import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
@@ -19,8 +17,8 @@ const NewIn = () => {
   useEffect(() => {
     loadWithCache<any[]>(
       CACHE_KEYS.newIn,
-      () => api.get<any[]>("/products?limit=200"),
-      (products, fromCache) => {
+      () => api.get<any[]>("/products?limit=200&populate=category"),
+      (products) => {
         const sorted = [...products].sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
           const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
@@ -124,27 +122,9 @@ const NewIn = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
               {currentItems.map((p) => (
-                <Link key={p.id} to={`/product/${p.slug}`} className="group">
-                  <div className="aspect-[2/3] bg-muted rounded overflow-hidden mb-1 relative">
-                    {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
-                    {p.images?.[0] && (
-                      <img 
-                        src={p.images[0]} 
-                        alt={p.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                      />
-                    )}
-                  </div>
-                  <p className="text-xs sm:text-sm font-light mb-0.5 line-clamp-1">{p.name}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
-                  {p.colors?.length > 0 && (
-                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                      {p.colors.length} {p.colors.length === 1 ? 'color' : 'colors'}
-                    </p>
-                  )}
-                </Link>
+                <ProductCard key={p.id} product={p} />
               ))}
               {currentItems.length === 0 && (
                 <div className="col-span-full text-center py-10">

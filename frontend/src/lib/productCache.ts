@@ -3,12 +3,12 @@
  * Stale-while-revalidate localStorage cache for product data.
  * - Instantly returns cached data (if any) so the UI renders immediately.
  * - Fetches fresh data in the background and updates the cache.
- * - Cache entries expire after TTL_MS (default 5 minutes).
+ * - Cache entries expire after TTL_MS (default 10 minutes).
  */
 
 import { api } from "@/lib/api";
 
-const TTL_MS = 5 * 60 * 1000; // 5 minutes
+const TTL_MS = 10 * 60 * 1000; // 10 minutes - longer cache for better performance
 
 interface CacheEntry<T> {
   data: T;
@@ -58,8 +58,9 @@ export async function loadWithCache<T>(
     const fresh = await fetcher();
     writeCache(key, fresh);
     onData(fresh, false);
-  } catch {
+  } catch (error) {
     // Network error — silently keep whatever we already showed
+    console.warn(`Failed to fetch fresh data for ${key}:`, error);
   }
 }
 
@@ -70,6 +71,7 @@ export const CACHE_KEYS = {
   featuredProducts: "diera-featured-products",
   categoryProducts: (slug: string) => `diera-products-cat-${slug}`,
   newIn: "diera-products-new-in",
+  categories: "diera-categories-all",
 };
 
 // ─── Prefetch helpers (called once on app boot) ──────────────────────────────
@@ -79,17 +81,29 @@ export const CACHE_KEYS = {
  * Call this once at app start so subsequent page visits are instant.
  */
 export function prefetchProducts(): void {
-  // All products (for NewIn / Category pages)
+  console.log('🚀 Prefetching products for instant page loads...');
+  
+  // All products (for NewIn / Category pages) - with category data
   loadWithCache(
     CACHE_KEYS.allProducts,
-    () => api.get<any[]>("/products?limit=200"),
+    () => api.get<any[]>("/products?limit=200&populate=category"),
     () => {} // no UI to update — purely warming the cache
   );
 
-  // Featured products (for home page)
+  // Featured products (for home page) - with category data
   loadWithCache(
     CACHE_KEYS.featuredProducts,
-    () => api.get<any[]>("/products?featured=true&limit=8"),
+    () => api.get<any[]>("/products?featured=true&limit=8&populate=category"),
     () => {}
   );
+
+  // Categories (for home page)
+  loadWithCache(
+    CACHE_KEYS.categories,
+    () => api.get<any[]>("/categories"),
+    () => {}
+  );
+  
+  console.log('✓ Cache warming initiated');
 }
+

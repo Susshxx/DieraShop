@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import { prefetchProducts } from "@/lib/productCache";
 
 import Index from "./pages/Index";
 import Category from "./pages/Category";
+import Collections from "./pages/Collections";
 import NewIn from "./pages/NewIn";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
@@ -35,7 +36,6 @@ import EsewaSuccess from "./pages/payment/EsewaSuccess";
 import EsewaFailure from "./pages/payment/EsewaFailure";
 
 import AccountLayout from "./pages/account/Layout";
-import AccountDashboard from "./pages/account/Dashboard";
 import AccountOrders from "./pages/account/Orders";
 import AccountChat from "./pages/account/Chat";
 import AccountNotifications from "./pages/account/Notifications";
@@ -79,6 +79,7 @@ const App = () => (
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/collections" element={<Collections />} />
                 <Route path="/category/new-in" element={<NewIn />} />
                 <Route path="/category/:category" element={<Category />} />
                 <Route path="/product/:productId" element={<ProductDetail />} />
@@ -102,7 +103,7 @@ const App = () => (
                 <Route path="/payment/esewa/failure" element={<EsewaFailure />} />
 
                 <Route path="/account" element={<ProtectedRoute><AccountLayout /></ProtectedRoute>}>
-                  <Route index element={<AccountDashboard />} />
+                  <Route index element={<Navigate to="/account/orders" replace />} />
                   <Route path="orders" element={<AccountOrders />} />
                   <Route path="chat" element={<AccountChat />} />
                   <Route path="notifications" element={<AccountNotifications />} />

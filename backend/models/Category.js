@@ -7,6 +7,7 @@ const categorySchema = new mongoose.Schema(
     imageUrl: { type: String, default: '' },
     sortOrder: { type: Number, default: 0 },
     showInHeader: { type: Boolean, default: true },
+    showInFooter: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

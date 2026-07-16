@@ -3,12 +3,11 @@ import { Link } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import { api } from "@/lib/api";
-import { formatNPR } from "@/hooks/useCart";
-import { isNewProduct } from "@/lib/productUtils";
-import NewBadge from "@/components/product/NewBadge";
 import EditableImage from "@/components/admin/EditableImage";
+import ProductCard from "@/components/product/ProductCard";
 import heroDefault from "@/assets/hero-image.png";
 import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
+import ProfileCompleteDialog from "@/components/user/ProfileCompleteDialog";
 
 // No default category images - all loaded from database
 const categoryImages: Record<string, string> = {};
@@ -21,31 +20,34 @@ const Index = () => {
     // Featured products — instant from cache, refreshed in background
     loadWithCache<any[]>(
       CACHE_KEYS.featuredProducts,
-      () => api.get<any[]>("/products?featured=true&limit=8"),
+      () => api.get<any[]>("/products?featured=true&limit=8&populate=category"),
       (data) => setFeatured(data)
     );
 
-    // Categories with images — instant from cache, refreshed in background
+    // Categories — instant from cache, refreshed in background
     loadWithCache<any[]>(
-      "diera-categories-with-images",
-      async () => {
-        const data = await api.get<any[]>("/categories");
-        const catsWithImages = data.map(async (cat) => {
-          try {
-            const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
-            return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
-          } catch {
-            return cat;
-          }
-        });
-        return Promise.all(catsWithImages);
-      },
-      (catsData) => setCats(catsData)
+      CACHE_KEYS.categories,
+      () => api.get<any[]>("/categories"),
+      async (data) => {
+        // Load category images in parallel
+        const catsWithImages = await Promise.all(
+          data.map(async (cat) => {
+            try {
+              const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
+              return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
+            } catch {
+              return cat;
+            }
+          })
+        );
+        setCats(catsWithImages);
+      }
     );
   }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <ProfileCompleteDialog />
       <DieraHeader />
       <main className="flex-1">
         {/* Hero */}
@@ -57,25 +59,18 @@ const Index = () => {
             className="block"
             imgClassName="w-full h-[50vh] sm:h-[60vh] object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent flex items-end">
-            <div className="px-6 sm:px-12 pb-8 sm:pb-12 max-w-2xl">
-              <h1 className="text-3xl sm:text-5xl mb-3" style={{ color: '#000000' }}>Diera Shop</h1>
-              <p className="text-sm sm:text-base mb-4" style={{ color: '#000000' }}>Handpicked clothes from Nepal - soft, modern, made for everyday grace.</p>
-              <Link to="/category/new-in" className="inline-block bg-primary text-primary-foreground px-5 py-2.5 rounded hover:opacity-90 transition text-sm sm:text-base">Shop new arrivals</Link>
-            </div>
-          </div>
         </section>
 
-        {/* Categories */}
+        {/* Categories - Horizontal scrollable circular layout */}
         <section className="pt-6 pb-4 sm:pt-10 sm:pb-6 bg-background">
           <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6 text-primary">Shop by collection</h2>
           
-          {/* Mobile: Horizontal scrollable circular icons */}
-          <div className="md:hidden overflow-x-auto scrollbar-hide px-4">
-            <div className="flex gap-2.5 pb-2 pt-2">
+          {/* Horizontal scrollable circular icons for all screen sizes */}
+          <div className="overflow-x-auto scrollbar-hide px-4 sm:px-6">
+            <div className="flex gap-4 sm:gap-6 pb-2 pt-2 justify-start sm:justify-center" style={{ paddingRight: '1rem' }}>
               {cats.map((c) => (
                 <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0">
-                  <div className="w-16 h-16 overflow-hidden rounded-full bg-muted mb-1.5 ring-2 ring-border group-hover:ring-primary transition-all shadow-sm flex items-center justify-center">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden rounded-full bg-muted mb-2 ring-2 ring-border group-hover:ring-primary transition-all shadow-md flex items-center justify-center cursor-pointer">
                     <EditableImage
                       slotKey={`home_collection_${c.slug}`}
                       defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
@@ -84,88 +79,15 @@ const Index = () => {
                       imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <p className="text-center text-[9px] font-medium line-clamp-2 leading-tight w-16">{c.name}</p>
+                  <p className="text-center text-sm sm:text-base font-medium line-clamp-2 leading-tight w-20 sm:w-24">{c.name}</p>
                 </Link>
               ))}
+              {/* Trailing spacer so last item has breathing room after scroll */}
+              <div className="flex-shrink-0 w-4 sm:w-6" aria-hidden="true" />
             </div>
-          </div>
-
-          {/* Desktop: Grid layout */}
-          <div className="hidden md:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6 max-w-7xl mx-auto px-4 sm:px-6">
-            {cats.map((c) => (
-              <Link key={c.id} to={`/category/${c.slug}`} className="group block">
-                <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-3">
-                  <EditableImage
-                    slotKey={`home_collection_${c.slug}`}
-                    defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
-                    alt={c.name}
-                    className="block w-full h-full"
-                    imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <p className="text-center text-sm font-medium">{c.name}</p>
-              </Link>
-            ))}
           </div>
           
           {cats.length === 0 && <p className="text-center text-muted-foreground text-sm px-4">Add categories in the admin to get started.</p>}
-        </section>
-
-        {/* Mid-Page Banner - Full Width with no margins */}
-        <section className="relative w-full mt-6 sm:mt-8">
-          <div className="w-full">
-            {/* Mobile: Single image with quality text overlay - Full width */}
-            <div className="relative overflow-hidden md:rounded-lg group md:hidden">
-              <EditableImage
-                slotKey="home_mid_banner_right"
-                defaultSrc={heroDefault}
-                alt="Featured collection"
-                className="block"
-                imgClassName="w-full h-[40vh] object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center px-6 text-center">
-                <h3 className="text-white text-2xl mb-3 italic" style={{ fontFamily: 'Playball, cursive' }}>
-                  Quality Craftsmanship
-                </h3>
-                <p className="text-white/90 text-sm mb-4 max-w-md leading-relaxed">
-                  Every piece is thoughtfully crafted with premium fabrics and sustainable practices. Experience clothing that lasts, made with care for you and the planet.
-                </p>
-                <Link 
-                  to="/about/sustainability" 
-                  className="inline-block bg-white text-black px-6 py-2.5 rounded hover:bg-white/90 transition text-sm font-medium"
-                >
-                  Our Commitment
-                </Link>
-              </div>
-            </div>
-            
-            {/* Desktop: Two images with margins and gap */}
-            <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6">
-              <div className="grid grid-cols-3 gap-4 sm:gap-6">
-                {/* Left Image - 1/3 width */}
-                <div className="relative overflow-hidden rounded-lg group">
-                  <EditableImage
-                    slotKey="home_mid_banner_left"
-                    defaultSrc={heroDefault}
-                    alt="Collection highlight"
-                    className="block"
-                    imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-                
-                {/* Right Image - 2/3 width */}
-                <div className="relative col-span-2 overflow-hidden rounded-lg group">
-                  <EditableImage
-                    slotKey="home_mid_banner_right"
-                    defaultSrc={heroDefault}
-                    alt="Featured collection"
-                    className="block"
-                    imgClassName="w-full h-[45vh] lg:h-[55vh] object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
         {/* Featured */}
@@ -173,24 +95,9 @@ const Index = () => {
           <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1.5 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
                 {featured.map((p) => (
-                  <Link key={p.id} to={`/product/${p.slug}`} className="group">
-                    <div className="aspect-[3/4] bg-muted rounded overflow-hidden mb-1 sm:mb-1.5 relative">
-                      {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
-                      {p.images?.[0] && (
-                        <img 
-                          src={p.images[0]} 
-                          alt={p.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-0">
-                      <p className="text-[10px] sm:text-xs text-center line-clamp-1 leading-tight">{p.name}</p>
-                      <p className="text-[10px] sm:text-xs text-center text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
-                    </div>
-                  </Link>
+                  <ProductCard key={p.id} product={p} />
                 ))}
               </div>
             </div>

@@ -312,8 +312,24 @@ adminRouter.patch('/:id/status', verifyToken, requireAdmin, async (req, res) => 
     for (const item of currentOrder.items) {
       const product = await Product.findById(item.productId);
       if (product) {
-        const newStock = Math.max(0, product.stock - item.qty);
-        await Product.findByIdAndUpdate(item.productId, { stock: newStock });
+        const size = item.size;
+        const color = item.color;
+        const qty = item.qty;
+        
+        // If product has size/color variants, update variant stock
+        if ((size || color) && product.variantStock && product.variantStock.size > 0) {
+          const variantKey = [size, color].filter(Boolean).join('-');
+          const currentVariantStock = product.variantStock.get(variantKey) || 0;
+          const newVariantStock = Math.max(0, currentVariantStock - qty);
+          
+          // Update variant stock
+          product.variantStock.set(variantKey, newVariantStock);
+          await product.save();
+        } else {
+          // No variants, just reduce general stock
+          const newStock = Math.max(0, product.stock - qty);
+          await Product.findByIdAndUpdate(item.productId, { stock: newStock });
+        }
       }
     }
   }

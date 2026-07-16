@@ -4,7 +4,6 @@ import Footer from "@/components/footer/Footer";
 import { useAuth } from "@/hooks/useAuth";
 
 const tabs = [
-  { to: "/account", label: "Dashboard", end: true },
   { to: "/account/orders", label: "Orders" },
   { to: "/account/chat", label: "Chat" },
   { to: "/account/notifications", label: "Notifications" },

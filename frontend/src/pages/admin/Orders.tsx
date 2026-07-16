@@ -16,6 +16,14 @@ const nameToSlug = (name: string) => {
     .replace(/^-+|-+$/g, '');
 };
 
+// Helper function to get custom badge className for pink
+const getStatusClassName = (status: string): string => {
+  if (['confirmed', 'shipped', 'delivered'].includes(status)) {
+    return 'bg-pink-100 text-pink-700 hover:bg-pink-100 border-pink-200';
+  }
+  return '';
+};
+
 const STATUSES = ["pending", "confirmed", "shipped", "delivered"] as const;
 type OrderStatus = typeof STATUSES[number];
 
@@ -100,7 +108,7 @@ const AdminOrders = () => {
                 {o.phone && <p className="text-xs text-muted-foreground">Phone: {o.phone}</p>}
               </div>
               <div className="text-right">
-                <Badge>{o.status}</Badge>
+                <Badge className={getStatusClassName(o.status)}>{o.status}</Badge>
                 <p className="mt-1 font-semibold">{formatNPR(o.total_npr)}</p>
                 <div className="flex gap-1 mt-2 justify-end">
                   <Button

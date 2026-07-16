@@ -17,6 +17,8 @@ const mapCat = (c) => ({
   sortOrder: c.sortOrder,
   show_in_header: c.showInHeader,
   showInHeader: c.showInHeader,
+  show_in_footer: c.showInFooter,
+  showInFooter: c.showInFooter,
   created_at: c.createdAt,
 });
 
@@ -32,22 +34,23 @@ router.get('/slug/:slug', async (req, res) => {
 });
 
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
-  const { name, slug, imageUrl, sortOrder, showInHeader } = req.body;
+  const { name, slug, imageUrl, sortOrder, showInHeader, showInFooter } = req.body;
   const cat = await Category.create({ 
     name, 
     slug, 
     imageUrl: imageUrl || '', 
     sortOrder: sortOrder ?? 0,
-    showInHeader: showInHeader ?? true 
+    showInHeader: showInHeader ?? true,
+    showInFooter: showInFooter ?? true
   });
   res.status(201).json(mapCat(cat));
 });
 
 router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
-  const { name, slug, sortOrder, showInHeader } = req.body;
+  const { name, slug, sortOrder, showInHeader, showInFooter } = req.body;
   const cat = await Category.findByIdAndUpdate(
     req.params.id,
-    { name, slug, sortOrder, showInHeader },
+    { name, slug, sortOrder, showInHeader, showInFooter },
     { new: true }
   );
   if (!cat) return res.status(404).json({ error: 'Category not found' });

@@ -3,9 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import { api } from "@/lib/api";
-import { formatNPR } from "@/hooks/useCart";
-import { isNewProduct } from "@/lib/productUtils";
-import NewBadge from "@/components/product/NewBadge";
+import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
@@ -33,7 +31,7 @@ const Category = () => {
       CACHE_KEYS.categoryProducts(category),
       async () => {
         const catData = await api.get<any>(`/categories/slug/${category}`);
-        return api.get<any[]>(`/products?categoryId=${catData.id}`);
+        return api.get<any[]>(`/products?categoryId=${catData.id}&populate=category`);
       },
       (products) => {
         setAllItems(products || []);
@@ -125,16 +123,9 @@ const Category = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
           {currentItems.map((p) => (
-            <Link key={p.id} to={`/product/${p.slug}`} className="group">
-              <div className="aspect-[2/3] bg-muted rounded overflow-hidden mb-1 relative">
-                {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
-                {p.images?.[0] && <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />}
-              </div>
-              <p className="text-xs sm:text-sm line-clamp-1 mb-0.5">{p.name}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">{formatNPR(p.price_npr ?? p.price)}</p>
-            </Link>
+            <ProductCard key={p.id} product={p} />
           ))}
           {currentItems.length === 0 && <p className="col-span-full text-muted-foreground text-xs py-6 text-center">No products yet.</p>}
         </div>

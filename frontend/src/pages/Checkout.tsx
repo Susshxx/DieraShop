@@ -62,7 +62,7 @@ const schema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-type PaymentMethod = "cod" | "phonepay";
+type PaymentMethod = "phonepay";
 
 const Checkout = () => {
   const { items, total, clear } = useCart();
@@ -80,7 +80,7 @@ const Checkout = () => {
     note: "",
   });
 
-  const [payment, setPayment] = useState<PaymentMethod>("cod");
+  const [payment, setPayment] = useState<PaymentMethod>("phonepay");
   const [paymentScreenshot, setPaymentScreenshot] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -88,17 +88,39 @@ const Checkout = () => {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [qrCodes, setQrCodes] = useState<Array<{ id: string; imageData: string; title: string; category: string }>>([]);
   const [previewQR, setPreviewQR] = useState<{ imageData: string; title: string; category: string } | null>(null);
+  const [defaultAddress, setDefaultAddress] = useState("");
+  const [useDefaultAddress, setUseDefaultAddress] = useState(true);
 
   // Derived
   const districts = form.province ? NEPAL_DATA[form.province] ?? [] : [];
   const grandTotal = total + shippingFee;
 
-  // Pre-fill email from auth
+  // Pre-fill from user profile
   useEffect(() => {
-    if (user?.email) setForm((f) => ({ ...f, email: user.email! }));
+    if (!user) return;
+    api.get<{ full_name: string; phone: string; address: string; province: string; district: string }>("/users/profile")
+      .then((data) => {
+        setForm((f) => ({
+          ...f,
+          full_name: data.full_name || f.full_name,
+          phone: data.phone || f.phone,
+          email: user.email || f.email,
+          province: data.province || f.province,
+          district: data.district || f.district,
+        }));
+        if (data.address) {
+          setDefaultAddress(data.address);
+          setUseDefaultAddress(true);
+        } else {
+          setUseDefaultAddress(false);
+        }
+      })
+      .catch(() => {
+        if (user?.email) setForm((f) => ({ ...f, email: user.email! }));
+      });
   }, [user]);
 
-  // Fetch shipping fee from backend when district changes
+  // Fetch shipping fee from backend when district changes OR when using default address with province/district
   useEffect(() => {
     if (!form.province || !form.district) { setShippingFee(0); return; }
     setShippingLoading(true);
@@ -158,17 +180,36 @@ const Checkout = () => {
     if (!user) { toast.error("Please sign in to place an order"); return nav("/auth/login"); }
     if (items.length === 0) return toast.error("Your bag is empty");
 
-    const parsed = schema.safeParse(form);
+    // Build validation data based on whether using default address or manual
+    const validationData = {
+      full_name: form.full_name,
+      email: form.email,
+      phone: form.phone,
+      province: form.province,
+      district: form.district,
+      address: useDefaultAddress ? defaultAddress : form.address,
+      landmark: form.landmark,
+      note: form.note,
+    };
+
+    const parsed = schema.safeParse(validationData);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     if (payment === "phonepay" && !paymentScreenshot) return toast.error("Please upload payment screenshot for PhonePay");
 
-    const shippingAddress = [
-      form.address,
-      form.landmark ? `Landmark: ${form.landmark}` : "",
-      form.district,
-      form.province,
-      "Nepal",
-    ].filter(Boolean).join(", ");
+    const shippingAddress = useDefaultAddress
+      ? [
+          defaultAddress,
+          form.district,
+          form.province,
+          "Nepal",
+        ].filter(Boolean).join(", ")
+      : [
+          form.address,
+          form.landmark ? `Landmark: ${form.landmark}` : "",
+          form.district,
+          form.province,
+          "Nepal",
+        ].filter(Boolean).join(", ");
 
     setBusy(true);
     try {
@@ -279,7 +320,6 @@ const Checkout = () => {
               </div>
             </section>
 
-            {/* 2. Delivery Address */}
             <section className="space-y-4">
               <h2 className="text-lg font-semibold border-b border-border pb-2 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
@@ -287,6 +327,39 @@ const Checkout = () => {
                 <span className="text-xs font-normal text-muted-foreground ml-1">(Nepal only)</span>
               </h2>
 
+              {/* Default address chip */}
+              {defaultAddress && useDefaultAddress && (
+                <div className="flex items-start gap-3 p-3 rounded-lg border border-primary/40 bg-primary/5">
+                  <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-primary mb-0.5">Default shipping address</p>
+                    <p className="text-sm text-foreground break-words">{defaultAddress}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseDefaultAddress(false)}
+                    className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2 whitespace-nowrap flex-shrink-0 mt-0.5"
+                  >
+                    Use different address
+                  </button>
+                </div>
+              )}
+
+              {/* Switch back to default */}
+              {defaultAddress && !useDefaultAddress && (
+                <button
+                  type="button"
+                  onClick={() => setUseDefaultAddress(true)}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <MapPin className="w-3 h-3" />
+                  Use my default address instead
+                </button>
+              )}
+
+              {/* Manual address fields — shown when useDefaultAddress is false or no default exists */}
+              {!useDefaultAddress && (
+                <>
               {/* Province */}
               <div className="space-y-1">
                 <Label htmlFor="province">
@@ -350,13 +423,15 @@ const Checkout = () => {
                   onChange={set("landmark")}
                 />
               </div>
+                </>
+              )}
 
-              {/* Shipping fee badge */}
+              {/* Shipping fee badge - show for both default and manual address */}
               {form.district && (
                 <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-accent/30 px-4 py-3">
                   <Truck className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="text-sm">
-                    <span className="font-medium">Shipping to {form.district}:</span>{" "}
+                    <span className="font-medium">Shipping to {form.district}, {form.province}:</span>{" "}
                     {shippingLoading
                       ? <span className="text-muted-foreground text-xs">Calculating…</span>
                       : <span className="text-primary font-semibold">{formatNPR(shippingFee)}</span>
@@ -365,7 +440,7 @@ const Checkout = () => {
                 </div>
               )}
 
-              {!form.district && (
+              {!form.district && !useDefaultAddress && (
                 <div className="rounded-lg p-3 bg-accent/20 border border-border">
                   <p className="text-xs text-muted-foreground flex items-center gap-2">
                     <Truck className="w-3.5 h-3.5" />
@@ -379,23 +454,17 @@ const Checkout = () => {
             <section className="space-y-3">
               <h2 className="text-lg font-semibold border-b border-border pb-2">3. Payment</h2>
               <div className="space-y-2">
-                {[
-                  { v: "cod", label: "Cash on Delivery", note: "Pay when your order arrives." },
-                  { v: "phonepay", label: "PhonePay", note: "Scan QR code and upload payment screenshot." },
-                ].map((opt) => (
-                  <label key={opt.v} className={`flex items-start gap-3 p-3 border rounded cursor-pointer ${payment === opt.v ? "border-primary bg-accent/40" : "border-border"}`}>
-                    <input type="radio" name="pay" value={opt.v} checked={payment === opt.v} onChange={() => setPayment(opt.v as PaymentMethod)} />
-                    <div>
-                      <p className="text-sm font-medium">{opt.label}</p>
-                      <p className="text-xs text-muted-foreground">{opt.note}</p>
-                    </div>
-                  </label>
-                ))}
+                <label className="flex items-start gap-3 p-3 border border-primary bg-accent/40 rounded cursor-default">
+                  <input type="radio" name="pay" value="phonepay" checked={true} readOnly />
+                  <div>
+                    <p className="text-sm font-medium">Online Payment</p>
+                    <p className="text-xs text-muted-foreground">Scan QR code and upload payment screenshot.</p>
+                  </div>
+                </label>
               </div>
 
               {/* PhonePay QR + screenshot */}
-              {payment === "phonepay" && (
-                <div className="mt-4 p-4 border border-primary/30 rounded-lg bg-accent/20">
+              <div className="mt-4 p-4 border border-primary/30 rounded-lg bg-accent/20">
                   <h3 className="text-sm font-semibold mb-3">Online Payment</h3>
 
                   <div className="mb-4">
@@ -423,7 +492,7 @@ const Checkout = () => {
                         </div>
                       </div>
                     )}
-                    <p className="text-xs text-muted-foreground mt-3 text-center font-semibold">
+                    <p className="text-l text-muted-foreground mt-3 text-center font-semibold">
                       Amount to pay: <span className="text-foreground">{formatNPR(grandTotal)}</span>
                     </p>
                   </div>
@@ -451,7 +520,6 @@ const Checkout = () => {
                     )}
                   </div>
                 </div>
-              )}
             </section>
 
             <Button type="submit" disabled={busy || items.length === 0} className="w-full sm:w-auto">
@@ -461,49 +529,74 @@ const Checkout = () => {
 
           {/* ── Order Summary ── */}
           <aside className="border border-border rounded-lg bg-card p-4 h-fit sticky top-24">
-            <h3 className="font-semibold mb-3">Your bag</h3>
-            <div className="space-y-2 mb-4">
+            <h3 className="font-semibold mb-3 border-b border-border pb-2">Your Bag</h3>
+            <div className="space-y-3 mb-4">
               {items.map((i) => (
-                <div key={`${i.productId}-${i.size}-${i.color}`} className="text-sm">
-                  <div className="flex justify-between">
-                    <span className="truncate pr-2">{i.name} × {i.quantity}</span>
-                    <span className="font-medium">{formatNPR(i.price * i.quantity)}</span>
+                <div key={`${i.productId}-${i.size}-${i.color}`} className="flex gap-3">
+                  {/* Product Image */}
+                  <div className="w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                    {i.image && (
+                      <img src={i.image} alt={i.name} className="w-full h-full object-cover" />
+                    )}
                   </div>
-                  <div className="text-xs text-muted-foreground space-x-2">
-                    {i.color && <span>Color: {i.color}</span>}
-                    {i.size && <span>Size: {i.size}</span>}
+                  
+                  {/* Product Details */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{i.name}</p>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {i.color && <p>Color: {i.color}</p>}
+                      {i.size && <p>Size: {i.size}</p>}
+                    </div>
+                  </div>
+                  
+                  {/* Quantity and Price */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-medium">x{i.quantity}</p>
+                    <p className="text-sm font-semibold">{formatNPR(i.price * i.quantity)}</p>
                   </div>
                 </div>
               ))}
               {items.length === 0 && <p className="text-sm text-muted-foreground">Empty.</p>}
             </div>
 
-            <div className="border-t border-border pt-3 space-y-1.5">
-              <div className="flex justify-between text-sm">
+            <div className="border-t border-border pt-3 space-y-2">
+              <div className="flex justify-between text-sm pb-2 border-b border-border">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatNPR(total)}</span>
+                <span className="font-medium">{formatNPR(total)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5" /> Shipping
-                </span>
-                <span>
-                  {form.district
-                    ? formatNPR(shippingFee)
-                    : <span className="text-muted-foreground text-xs">Select district</span>}
-                </span>
+              
+              {/* Shipping Fee */}
+              <div className="text-sm">
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Truck className="w-3.5 h-3.5" /> Shipping Fee
+                  </span>
+                  <span className="font-medium">
+                    {form.district
+                      ? formatNPR(shippingFee)
+                      : <span className="text-muted-foreground text-xs">Select district</span>}
+                  </span>
+                </div>
+                {/* Show shipping address if available */}
+                {form.district && form.province && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {useDefaultAddress && defaultAddress ? defaultAddress : form.address}
+                    {form.district && form.province && (
+                      <span className="block">{form.district}, {form.province}, Nepal</span>
+                    )}
+                  </p>
+                )}
               </div>
-              <div className="flex justify-between font-semibold pt-1.5 border-t border-border">
+              
+              <div className="flex justify-between font-semibold pt-2 border-t border-border">
                 <span>Total</span>
-                <span>{formatNPR(grandTotal)}</span>
+                <span className="text-lg">{formatNPR(grandTotal)}</span>
               </div>
             </div>
 
             <div className="mt-3 pt-3 border-t border-border">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {payment === "cod"
-                  ? "* Shipping charges will be collected by the delivery person upon delivery."
-                  : "* Total amount includes shipping. Please pay the full amount shown."}
+                * Total amount includes shipping. Please pay the full amount shown.
               </p>
             </div>
           </aside>
@@ -513,25 +606,25 @@ const Checkout = () => {
 
       {/* QR Preview Dialog */}
       <Dialog open={!!previewQR} onOpenChange={(open) => !open && setPreviewQR(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{previewQR?.category} - {previewQR?.title}</DialogTitle>
+        <DialogContent className="max-w-sm p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base">{previewQR?.category}</DialogTitle>
           </DialogHeader>
           {previewQR && (
-            <div className="flex flex-col items-center">
-              <div className="w-full max-w-lg bg-white rounded-lg border p-4">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-full bg-white rounded-lg border p-3">
                 <img src={previewQR.imageData} alt={previewQR.title} className="w-full h-auto object-contain" />
               </div>
-              <p className="text-sm text-muted-foreground mt-4 text-center">
+              <p className="text-xs text-muted-foreground text-center leading-relaxed">
                 Scan this QR code with your payment app to complete the transaction
               </p>
-              <p className="text-sm font-semibold mt-2">Amount: {formatNPR(grandTotal)}</p>
+              <p className="text-sm font-semibold">Amount: {formatNPR(grandTotal)}</p>
               <a
                 href={previewQR.imageData}
                 download={`${previewQR.category}-QR.png`}
-                className="mt-4 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                <Download className="w-4 h-4" /> Download QR Code
+                <Download className="w-3.5 h-3.5" /> Download QR Code
               </a>
             </div>
           )}

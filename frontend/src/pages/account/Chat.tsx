@@ -90,16 +90,46 @@ const Chat = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const formatMessageTime = (timestamp: string) => {
+    const msgDate = new Date(timestamp);
+    const today = new Date();
+    const isToday = msgDate.toDateString() === today.toDateString();
+    
+    if (isToday) {
+      return `Today at ${msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (msgDate.toDateString() === yesterday.toDateString()) {
+      return `Yesterday at ${msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    return msgDate.toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+  };
+
   const renderMessage = (m: any) => {
     const isOwn = m.sender_id === user?.id;
+    const timestamp = m.created_at || m.createdAt;
     
     if (m.message_type === 'image' || m.messageType === 'image') {
       return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-[75%] rounded-lg overflow-hidden ${isOwn ? "bg-primary" : "bg-accent"} cursor-pointer`}
-               onClick={() => setEnlargedImage(m.file_data || m.fileData)}>
-            <img src={m.file_data || m.fileData} alt="Shared image" className="max-w-full max-h-64 object-contain" />
-            {m.text && <p className={`px-3 py-2 text-sm ${isOwn ? "text-primary-foreground" : "text-accent-foreground"}`}>{m.text}</p>}
+          <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+            <div className={`rounded-lg overflow-hidden ${isOwn ? "bg-primary" : "bg-accent"} cursor-pointer`}
+                 onClick={() => setEnlargedImage(m.file_data || m.fileData)}>
+              <img src={m.file_data || m.fileData} alt="Shared image" className="w-full max-w-sm max-h-64 object-contain" />
+              {m.text && <p className={`px-3 py-2 text-sm ${isOwn ? "text-primary-foreground" : "text-accent-foreground"}`}>{m.text}</p>}
+            </div>
+            <span className="text-xs text-muted-foreground mt-1 px-1">
+              {formatMessageTime(timestamp)}
+            </span>
           </div>
         </div>
       );
@@ -108,8 +138,13 @@ const Chat = () => {
     if (m.message_type === 'audio' || m.messageType === 'audio') {
       return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-[75%] px-3 py-2 rounded-lg ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
-            <audio controls src={m.file_data || m.fileData} className="max-w-full" />
+          <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+            <div className={`px-3 py-2 rounded-lg ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+              <audio controls src={m.file_data || m.fileData} className="max-w-full" />
+            </div>
+            <span className="text-xs text-muted-foreground mt-1 px-1">
+              {formatMessageTime(timestamp)}
+            </span>
           </div>
         </div>
       );
@@ -117,8 +152,13 @@ const Chat = () => {
 
     return (
       <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-        <div className={`max-w-[75%] px-3 py-2 rounded-lg text-sm ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
-          {m.body || m.text}
+        <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+          <div className={`px-3 py-2 rounded-lg text-sm ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+            {m.body || m.text}
+          </div>
+          <span className="text-xs text-muted-foreground mt-1 px-1">
+            {formatMessageTime(timestamp)}
+          </span>
         </div>
       </div>
     );

@@ -150,53 +150,110 @@ const Orders = () => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Helper function to get status display text
+  const getStatusText = (status: string) => {
+    if (status === 'awaiting_payment') return 'pending';
+    return status;
+  };
+
+  // Helper function to get status badge variant
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    // We'll use a custom className for pink, so return secondary as base
+    return 'secondary';
+  };
+  
+  // Helper function to get custom badge className for pink
+  const getStatusClassName = (status: string): string => {
+    if (['confirmed', 'shipped', 'delivered'].includes(status)) {
+      return 'bg-pink-100 text-pink-700 hover:bg-pink-100 border-pink-200';
+    }
+    return '';
+  };
+
+  // Helper to format full address - shipping_address already includes district, province from checkout
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    // The address from checkout already includes: street, landmark, district, province, Nepal
+    // Just ensure Nepal is at the end if not already there
+    const addressLower = address.toLowerCase();
+    if (!addressLower.includes('nepal')) {
+      return `${address}, Nepal`;
+    }
+    return address;
+  };
+
   if (orders.length === 0) return <p className="text-muted-foreground">You have no orders yet.</p>;
 
   return (
     <div className="space-y-4">
-      {orders.map((o) => (
-        <div key={o.id} className="border border-border rounded-lg p-4 bg-card">
-          <div className="flex flex-wrap justify-between gap-2">
-            <div className="flex-1">
-              <p className="font-medium">Order #{String(o.id).slice(-8)}</p>
-              <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">{o.shipping_address}</p>
-            </div>
-            <div className="text-right">
-              <Badge variant="secondary">{o.status}</Badge>
-              <p className="mt-1 font-semibold">{formatNPR(o.total_npr)}</p>
-              {['pending', 'awaiting_payment'].includes(o.status) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCancelId(o.id)}
-                  className="mt-2 text-destructive hover:text-destructive"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Cancel
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className="mt-3 text-sm space-y-2">
-            {o.order_items?.map((it: any) => (
-              <Link
-                key={it.id || it.product_name}
-                to={`/product/${nameToSlug(it.product_name)}`}
-                className="flex items-center gap-3 hover:bg-accent/50 rounded p-1 -m-1 transition-colors"
-              >
-                {it.product_image && (
-                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
-                    <img
-                      src={it.product_image}
-                      alt={it.product_name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+      {orders.map((o) => {
+        // Calculate shipping charge (assuming it's included in total or fetched separately)
+        const itemsTotal = o.order_items?.reduce((sum: number, it: any) => sum + (it.price_npr * it.qty), 0) || 0;
+        const shippingCharge = o.total_npr - itemsTotal;
+        
+        return (
+          <div key={o.id} className="border border-border rounded-lg p-3 sm:p-4 bg-card">
+            {/* Header: Order info on left, Product summary on right */}
+            <div className="flex justify-between items-start gap-4 mb-2">
+              {/* Left: Order # and timestamp */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-base text-foreground">Order #{String(o.id).slice(-8)}</p>
+                <p className="text-xs text-foreground mt-0.5">{new Date(o.created_at).toLocaleString()}</p>
+              </div>
+              
+              {/* Right: First product name and total price */}
+              <div className="flex flex-col items-end flex-shrink-0">
+                {o.order_items && o.order_items.length > 0 && (
+                  <p className="text-sm font-medium text-foreground text-right line-clamp-1">
+                    {o.order_items[0].product_name}
+                    {o.order_items.length > 1 && ` +${o.order_items.length - 1} more`}
+                  </p>
                 )}
-                <div className="flex justify-between items-center flex-1 text-muted-foreground">
-                  <div className="flex-1">
-                    <span className="hover:text-foreground transition-colors">{it.product_name} × {it.qty}{it.size ? ` (${it.size})` : ""}{it.color ? ` - ${it.color}` : ""}</span>
+                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{formatNPR(o.total_npr)}</p>
+              </div>
+            </div>
+
+            {/* Status badge and Address */}
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant={getStatusVariant(o.status)} className={getStatusClassName(o.status)}>{getStatusText(o.status)}</Badge>
+            </div>
+            <div className="mb-2">
+              <p className="text-xs text-foreground leading-relaxed">{formatAddress(o.shipping_address)}</p>
+            </div>
+
+            {/* Shipping Charge */}
+            {shippingCharge > 0 && (
+              <div className="mb-2 pb-2 border-b border-border">
+                <p className="text-sm text-foreground">
+                  <span className="text-muted-foreground">Shipping Charge:</span> <span className="font-semibold">{formatNPR(shippingCharge)}</span>
+                </p>
+              </div>
+            )}
+
+            {/* Product Items */}
+            <div className="space-y-2 mt-2">
+              {o.order_items?.map((it: any) => (
+                <Link
+                  key={it.id || it.product_name}
+                  to={`/product/${nameToSlug(it.product_name)}`}
+                  className="flex items-center gap-3 hover:bg-accent/50 rounded p-2 transition-colors"
+                >
+                  {/* Product Image */}
+                  {it.product_image && (
+                    <div className="flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded overflow-hidden bg-muted">
+                      <img
+                        src={it.product_image}
+                        alt={it.product_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Product Details */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground hover:text-primary transition-colors line-clamp-2">{it.product_name}</p>
+                    {it.color && <p className="text-xs text-foreground mt-0.5">Color: {it.color}</p>}
+                    {it.size && <p className="text-xs text-foreground">Size: {it.size}</p>}
                     {o.status === 'delivered' && (
                       <Button
                         variant="link"
@@ -205,22 +262,42 @@ const Orders = () => {
                           e.preventDefault();
                           openReviewDialog(it.product_id, o.id, it.product_name);
                         }}
-                        className="ml-2 h-auto p-0 text-xs text-primary"
+                        className="h-auto p-0 text-xs text-primary mt-1"
                       >
-                        Review
+                        Write Review
                       </Button>
                     )}
                   </div>
-                  <span className="ml-2">{formatNPR(it.price_npr * it.qty)}</span>
-                </div>
-              </Link>
-            ))}
+                  
+                  {/* Quantity and Price */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm text-foreground font-medium">x {it.qty}</p>
+                    <p className="text-base font-semibold text-foreground">{formatNPR(it.price_npr * it.qty)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Footer: Payment Method and Actions */}
+            <div className="mt-3 pt-2 border-t border-border flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+              <p className="text-xs text-foreground">
+                Payment: <span className="font-medium">{o.payment_method?.toUpperCase()}</span>
+              </p>
+              {['pending', 'awaiting_payment'].includes(o.status) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCancelId(o.id)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-full sm:w-auto"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Cancel Order
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="mt-2 text-xs text-muted-foreground">
-            Payment: {o.payment_method?.toUpperCase()}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Cancel confirmation — uses Dialog (reliable centering) instead of AlertDialog */}
       <Dialog open={!!cancelId} onOpenChange={(open) => !open && setCancelId(null)}>

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type Theme = "pink" | "rose" | "sage" | "golden";
-const THEMES: Theme[] = ["pink", "rose", "sage", "golden"];
+export type Theme = "white" | "pink" | "rose" | "sage" | "golden";
+const THEMES: Theme[] = ["white", "pink", "rose", "sage", "golden"];
 
 interface ThemeCtx {
   theme: Theme;
@@ -13,8 +13,8 @@ const Ctx = createContext<ThemeCtx | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "pink";
-    return (localStorage.getItem("diera-theme") as Theme) || "pink";
+    if (typeof window === "undefined") return "white";
+    return (localStorage.getItem("diera-theme") as Theme) || "white";
   });
 
   useEffect(() => {

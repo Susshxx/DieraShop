@@ -132,34 +132,34 @@ const EditableImage = ({ slotKey, defaultSrc, alt = "", className = "", imgClass
             <Pencil className="w-4 h-4" />
           </button>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto p-4">
-              <DialogHeader className="pb-2">
-                <DialogTitle className="text-sm">Edit · {slotKey}</DialogTitle>
+            <DialogContent className="max-w-xs max-h-[85vh] overflow-y-auto p-3">
+              <DialogHeader className="pb-1">
+                <DialogTitle className="text-xs">Edit · {slotKey}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-2">
-                <div className="w-full h-20 bg-muted rounded flex items-center justify-center overflow-hidden">
+              <div className="space-y-1.5">
+                <div className="w-full h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
                   <img src={preview} alt="" className="max-w-full max-h-full object-contain" />
                 </div>
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => { e.preventDefault(); setFile(e.dataTransfer.files?.[0] || null); setDraftUrl(""); }}
-                  className="border-2 border-dashed border-border rounded p-2 text-center"
+                  className="border-2 border-dashed border-border rounded p-1.5 text-center"
                 >
-                  <Label htmlFor="file" className="text-xs text-muted-foreground block mb-1">Upload from device (max 5 MB)</Label>
-                  <Input id="file" type="file" accept="image/jpeg,image/png,image/webp" className="text-xs h-8" onChange={(e) => { setFile(e.target.files?.[0] || null); setDraftUrl(""); }} />
+                  <Label htmlFor="file" className="text-[10px] text-muted-foreground block mb-0.5">Upload from device (max 5 MB)</Label>
+                  <Input id="file" type="file" accept="image/jpeg,image/png,image/webp" className="text-xs h-7" onChange={(e) => { setFile(e.target.files?.[0] || null); setDraftUrl(""); }} />
                 </div>
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleExternalDrop}
-                  className="border-2 border-dashed border-border rounded p-2 text-center"
+                  className="border-2 border-dashed border-border rounded p-1.5 text-center"
                 >
-                  <p className="text-xs text-muted-foreground">Or drag an image from a website here</p>
-                  {draftUrl && <p className="text-[10px] mt-1 truncate text-primary">{draftUrl}</p>}
+                  <p className="text-[10px] text-muted-foreground">Or drag an image from a website here</p>
+                  {draftUrl && <p className="text-[9px] mt-0.5 truncate text-primary">{draftUrl}</p>}
                 </div>
-                <div><Label htmlFor="title" className="text-xs">Title</Label><Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-0.5 h-8 text-xs" /></div>
-                <div><Label htmlFor="subtitle" className="text-xs">Subtitle</Label><Input id="subtitle" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="mt-0.5 h-8 text-xs" /></div>
-                <div><Label htmlFor="alt" className="text-xs">Alt text</Label><Input id="alt" value={altText} onChange={(e) => setAltText(e.target.value)} className="mt-0.5 h-8 text-xs" /></div>
-                <Button onClick={save} disabled={busy} className="w-full h-8 text-xs mt-2">{busy ? "Saving…" : "Save"}</Button>
+                <div><Label htmlFor="title" className="text-[10px]">Title</Label><Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-0.5 h-7 text-xs" /></div>
+                <div><Label htmlFor="subtitle" className="text-[10px]">Subtitle</Label><Input id="subtitle" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="mt-0.5 h-7 text-xs" /></div>
+                <div><Label htmlFor="alt" className="text-[10px]">Alt text</Label><Input id="alt" value={altText} onChange={(e) => setAltText(e.target.value)} className="mt-0.5 h-7 text-xs" /></div>
+                <Button onClick={save} disabled={busy} className="w-full h-7 text-xs mt-1.5">{busy ? "Saving…" : "Save"}</Button>
               </div>
             </DialogContent>
           </Dialog>

@@ -87,16 +87,57 @@ const Chats = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const formatMessageTime = (timestamp: string) => {
+    const msgDate = new Date(timestamp);
+    const today = new Date();
+    const isToday = msgDate.toDateString() === today.toDateString();
+    
+    if (isToday) {
+      return `Today at ${msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (msgDate.toDateString() === yesterday.toDateString()) {
+      return `Yesterday at ${msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    
+    return msgDate.toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+  };
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   const renderMessage = (m: any) => {
     const isOwn = m.sender_id === user?.id;
+    const timestamp = m.created_at || m.createdAt;
+    const senderName = active?.profiles?.full_name || 'User';
     
     if (m.message_type === 'image' || m.messageType === 'image') {
       return (
-        <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-[75%] rounded-lg overflow-hidden ${isOwn ? "bg-primary" : "bg-accent"} cursor-pointer`}
-               onClick={() => setEnlargedImage(m.file_data || m.fileData)}>
-            <img src={m.file_data || m.fileData} alt="Shared image" className="max-w-full max-h-64 object-contain" />
-            {m.text && <p className={`px-3 py-2 text-sm ${isOwn ? "text-primary-foreground" : "text-accent-foreground"}`}>{m.text}</p>}
+        <div className={`flex gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+          {!isOwn && (
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+              {getUserInitials(senderName)}
+            </div>
+          )}
+          <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+            <div className={`rounded-lg overflow-hidden ${isOwn ? "bg-primary" : "bg-accent"} cursor-pointer`}
+                 onClick={() => setEnlargedImage(m.file_data || m.fileData)}>
+              <img src={m.file_data || m.fileData} alt="Shared image" className="w-full max-w-sm max-h-64 object-contain" />
+              {m.text && <p className={`px-3 py-2 text-sm ${isOwn ? "text-primary-foreground" : "text-accent-foreground"}`}>{m.text}</p>}
+            </div>
+            <span className={`text-xs text-muted-foreground mt-1 px-1`}>
+              {formatMessageTime(timestamp)}
+            </span>
           </div>
         </div>
       );
@@ -104,18 +145,38 @@ const Chats = () => {
 
     if (m.message_type === 'audio' || m.messageType === 'audio') {
       return (
-        <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-[75%] px-3 py-2 rounded-lg ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
-            <audio controls src={m.file_data || m.fileData} className="max-w-full" />
+        <div className={`flex gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+          {!isOwn && (
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+              {getUserInitials(senderName)}
+            </div>
+          )}
+          <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+            <div className={`px-3 py-2 rounded-lg ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+              <audio controls src={m.file_data || m.fileData} className="max-w-full" />
+            </div>
+            <span className={`text-xs text-muted-foreground mt-1 px-1`}>
+              {formatMessageTime(timestamp)}
+            </span>
           </div>
         </div>
       );
     }
 
     return (
-      <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-        <div className={`max-w-[75%] px-3 py-2 rounded-lg text-sm ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
-          {m.body || m.text}
+      <div className={`flex gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+        {!isOwn && (
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+            {getUserInitials(senderName)}
+          </div>
+        )}
+        <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+          <div className={`px-3 py-2 rounded-lg text-sm ${isOwn ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+            {m.body || m.text}
+          </div>
+          <span className={`text-xs text-muted-foreground mt-1 px-1`}>
+            {formatMessageTime(timestamp)}
+          </span>
         </div>
       </div>
     );
@@ -126,16 +187,28 @@ const Chats = () => {
       <h1 className="text-2xl mb-6">Chats</h1>
       <div className="grid md:grid-cols-3 gap-4 h-[70vh]">
         <div className="border border-border rounded-lg bg-card overflow-y-auto">
-          {convs.map((c) => (
-            <button key={c.id} onClick={() => setActive(c)}
-              className={`w-full text-left p-3 border-b border-border hover:bg-accent ${active?.id === c.id ? "bg-accent" : ""}`}>
-              <p className="text-sm font-medium">{c.profiles?.full_name || "Guest User"}</p>
-              {c.last_message && (
-                <p className="text-xs text-muted-foreground truncate mt-1">{c.last_message}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">{new Date(c.last_message_at).toLocaleString()}</p>
-            </button>
-          ))}
+          {convs.map((c) => {
+            const unreadCount = c.unread_count || 0;
+            return (
+              <button key={c.id} onClick={() => setActive(c)}
+                className={`w-full text-left p-3 border-b border-border hover:bg-accent ${active?.id === c.id ? "bg-accent" : ""} relative`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{c.profiles?.full_name || "Guest User"}</p>
+                    {c.last_message && (
+                      <p className="text-xs text-muted-foreground truncate mt-1">{c.last_message}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(c.last_message_at).toLocaleString()}</p>
+                  </div>
+                  {unreadCount > 0 && (
+                    <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
           {convs.length === 0 && <p className="p-4 text-sm text-muted-foreground">No conversations.</p>}
         </div>
         <div className="md:col-span-2 border border-border rounded-lg bg-card flex flex-col h-[70vh]">

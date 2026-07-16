@@ -6,6 +6,7 @@ import passport from 'passport';
 import mongoose from 'mongoose';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import compression from 'compression';
 
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
@@ -38,6 +39,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(compression()); // Enable gzip compression for faster data transfer
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

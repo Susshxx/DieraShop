@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { User as UserIcon, LogOut, Package, MessageCircle, Bell, ShieldCheck } from "lucide-react";
+import { User as UserIcon, LogOut, Package, MessageCircle, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { clearToken } from "@/lib/api";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -26,10 +26,9 @@ const UserMenu = () => {
         <DropdownMenuSeparator />
         {role !== "admin" && (
           <>
-            <DropdownMenuItem onClick={() => nav("/account")}><UserIcon className="w-4 h-4 mr-2" /> My account</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/account/profile")}><UserIcon className="w-4 h-4 mr-2" /> My account</DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav("/account/orders")}><Package className="w-4 h-4 mr-2" /> Orders</DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav("/account/chat")}><MessageCircle className="w-4 h-4 mr-2" /> Chat with us</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => nav("/account/notifications")}><Bell className="w-4 h-4 mr-2" /> Notifications</DropdownMenuItem>
           </>
         )}
         {role === "admin" && (

@@ -6,6 +6,8 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  showInFooter?: boolean;
+  show_in_footer?: boolean;
 }
 
 const Footer = () => {
@@ -14,8 +16,14 @@ const Footer = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await api.get<Category[]>("/categories");
-        setCategories(data);
+        const data = await api.get<Category[]>(`/categories?t=${Date.now()}`);
+        // Filter to show only categories with showInFooter enabled
+        const filtered = data.filter((c) => {
+          const val = c.showInFooter ?? c.show_in_footer;
+          return val === true || val === 1;
+        });
+        console.log('Footer categories (filtered by showInFooter):', filtered);
+        setCategories(filtered);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
       }

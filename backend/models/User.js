@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     name: { type: String, default: '' },
     phone: { type: String, default: '' },
     address: { type: String, default: '' },
+    province: { type: String, default: '' },
+    district: { type: String, default: '' },
     avatarUrl: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
   },

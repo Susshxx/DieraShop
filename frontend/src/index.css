@@ -5,7 +5,60 @@
 /* Diera Shop — Light Pink Design System (HSL semantic tokens only) */
 
 @layer base {
+  /* Pure White Theme - Clean and neutral */
   :root,
+  :root[data-theme="white"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    --status-bar: 0 0% 20%;
+    --status-bar-foreground: 0 0% 98%;
+
+    --nav-background: 0 0% 100%;
+    --nav-foreground: 0 0% 15%;
+    --nav-hover: 340 55% 55%;
+
+    --primary: 340 55% 72%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 340 55% 60%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 20%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 340 55% 72%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.5rem;
+
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 340 55% 72%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 20%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 340 55% 72%;
+  }
+
   :root[data-theme="pink"] {
     --background: 350 80% 96%;
     --foreground: 340 25% 15%;
