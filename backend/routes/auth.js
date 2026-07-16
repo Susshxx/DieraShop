@@ -9,7 +9,7 @@ import SignupOtp from '../models/SignupOtp.js';
 import PasswordReset from '../models/PasswordReset.js';
 import { signToken } from '../utils/jwt.js';
 import { generateOtp, hashOtp, compareOtp } from '../utils/otp.js';
-import { sendEmail, otpEmailHtml, isEmailEnabled } from '../utils/email.js';
+import { sendEmail, otpEmailHtml, isEmailEnabled, passwordResetEmailHtml } from '../utils/email.js';
 import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
@@ -333,10 +333,11 @@ router.post('/forgot-password', async (req, res) => {
     const emailResult = await sendEmail({
       to: email,
       subject: 'Reset Your Diera Shop Password',
-      html: '', // Not used by EmailJS, but kept for fallback
+      html: passwordResetEmailHtml(resetLink, user.name || email.split('@')[0]),
       templateParams: {
         to_name: user.name || email.split('@')[0],
         reset_link: resetLink,
+        message: `Click here to reset your password: ${resetLink}`
       },
       templateId: process.env.EMAILJS_TEMPLATE_ID_RESET, // Use separate template for password reset
     });
