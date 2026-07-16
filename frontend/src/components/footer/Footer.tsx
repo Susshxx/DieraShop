@@ -14,57 +14,44 @@ const Footer = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    const CACHE_KEY = 'diera-categories';
-    const CACHE_TIMESTAMP_KEY = 'diera-categories-timestamp';
-    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    const CACHE_KEY = 'diera-footer-categories';
+    const CACHE_TIMESTAMP_KEY = 'diera-footer-categories-timestamp';
 
-    const fetchCategories = async () => {
-      try {
-        const data = await api.get<Category[]>('/categories');
-        
-        // Save to localStorage with timestamp
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
-        
+    // Fetch categories from API
+    api.get<Category[]>('/categories')
+      .then((data) => {
         // Filter to show only categories with showInFooter enabled
         const filtered = data.filter((c) => {
           const val = c.showInFooter ?? c.show_in_footer;
-          return val === true || val === 1;
+          return val === true;
         });
         
-        console.log('Footer categories fetched and cached (filtered by showInFooter):', filtered);
+        console.log('Footer categories fetched (filtered by showInFooter):', filtered);
         setCategories(filtered);
-      } catch (error) {
+        
+        // Save to localStorage after successful fetch
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      })
+      .catch((error) => {
         console.error("Failed to fetch categories:", error);
-      }
-    };
-
-    // Try to load from cache first
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
-    
-    if (cachedData && cachedTimestamp) {
-      const age = Date.now() - parseInt(cachedTimestamp);
-      
-      if (age < CACHE_DURATION) {
-        // Use cached data if it's fresh
-        try {
-          const data: Category[] = JSON.parse(cachedData);
-          const filtered = data.filter((c) => {
-            const val = c.showInFooter ?? c.show_in_footer;
-            return val === true || val === 1;
-          });
-          setCategories(filtered);
-          console.log('Using cached footer categories (age: ' + Math.round(age / 1000) + 's)');
-          return; // Don't fetch from server
-        } catch (e) {
-          console.error('Failed to parse cached categories:', e);
+        
+        // If fetch fails, try to use cached data as fallback
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          try {
+            const data: Category[] = JSON.parse(cachedData);
+            const filtered = data.filter((c) => {
+              const val = c.showInFooter ?? c.show_in_footer;
+              return val === true;
+            });
+            setCategories(filtered);
+            console.log('Using cached footer categories as fallback');
+          } catch (e) {
+            console.error('Failed to parse cached categories:', e);
+          }
         }
-      }
-    }
-    
-    // If no cache or cache is stale, fetch from server
-    fetchCategories();
+      });
   }, []);
 
   return (
