@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
@@ -14,33 +14,80 @@ const categoryImages: Record<string, string> = {};
 
 const Index = () => {
   const [featured, setFeatured] = useState<any[]>([]);
+  const [displayedFeatured, setDisplayedFeatured] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_BATCH = 12; // Load 12 items at a time
 
+  // Load more featured products when scrolling
+  const loadMoreFeatured = useCallback(() => {
+    if (loadingMore || displayedFeatured.length >= featured.length) return;
+    
+    setLoadingMore(true);
+    const nextBatch = featured.slice(displayedFeatured.length, displayedFeatured.length + ITEMS_PER_BATCH);
+    
+    // Simulate slight delay for smooth loading
+    setTimeout(() => {
+      setDisplayedFeatured(prev => [...prev, ...nextBatch]);
+      setLoadingMore(false);
+    }, 100);
+  }, [featured, displayedFeatured, loadingMore]);
+
+  // Intersection Observer for infinite scroll
   useEffect(() => {
-    // Featured products — instant from cache, refreshed in background
-    loadWithCache<any[]>(
-      CACHE_KEYS.featuredProducts,
-      () => api.get<any[]>("/products?featured=true&limit=8&populate=category"),
-      (data) => setFeatured(data)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && featured.length > 0) {
+          loadMoreFeatured();
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
     );
 
-    // Categories — instant from cache, refreshed in background
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [loadMoreFeatured, featured]);
+
+  useEffect(() => {
+    // Featured products — limit to 24 initially for faster load
+    loadWithCache<any[]>(
+      CACHE_KEYS.featuredProducts,
+      () => api.get<any[]>("/products?featured=true&limit=24"),
+      (data) => {
+        setFeatured(data);
+        // Initially display first batch
+        setDisplayedFeatured(data.slice(0, ITEMS_PER_BATCH));
+      }
+    );
+
+    // Categories — load without images for faster initial load
     loadWithCache<any[]>(
       CACHE_KEYS.categories,
       () => api.get<any[]>("/categories"),
-      async (data) => {
-        // Load category images in parallel
-        const catsWithImages = await Promise.all(
-          data.map(async (cat) => {
-            try {
-              const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
-              return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
-            } catch {
-              return cat;
-            }
-          })
-        );
-        setCats(catsWithImages);
+      (data) => {
+        setCats(data);
+        // Load category images in background (non-blocking)
+        setTimeout(() => {
+          Promise.all(
+            data.map(async (cat) => {
+              try {
+                const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
+                return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
+              } catch {
+                return cat;
+              }
+            })
+          ).then(setCats);
+        }, 0);
       }
     );
   }, []);
@@ -89,15 +136,24 @@ const Index = () => {
         </section>
 
         {/* Featured */}
-        {featured.length > 0 && (
+        {displayedFeatured.length > 0 && (
           <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
-                {featured.map((p) => (
+                {displayedFeatured.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
+              
+              {/* Loading indicator and observer target */}
+              {displayedFeatured.length < featured.length && (
+                <div ref={observerTarget} className="flex justify-center mt-6">
+                  <div className="animate-pulse text-muted-foreground text-sm">
+                    Loading more products...
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
