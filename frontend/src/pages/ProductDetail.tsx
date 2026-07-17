@@ -424,7 +424,7 @@ const ProductDetail = () => {
                   {formatNPR(p.originalPriceNPR || p.original_price_npr)}
                 </span>
                 {/* Discount badge */}
-                {(p.discountPercent || p.discount_percent) > 0 && (
+                {((p.discountPercent || p.discount_percent || 0) > 0) && (
                   <div className="bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-md">
                     {p.discountPercent || p.discount_percent}% OFF
                   </div>
