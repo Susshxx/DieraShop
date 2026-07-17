@@ -63,8 +63,12 @@ router.get('/', async (req, res) => {
   if (req.query.categoryId) filter.categoryId = req.query.categoryId;
   const limit = Math.min(Number(req.query.limit) || 50, 200);
   
-  // Only populate category if explicitly requested (saves significant time)
-  const query = Product.find(filter).sort({ createdAt: -1 }).limit(limit).lean();
+  // Use lean() for faster queries and select only needed fields
+  const query = Product.find(filter)
+    .select('name slug priceNPR originalPriceNPR discountPercent images colors sizes stock featured active createdAt categoryId')
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
   
   if (req.query.populate === 'category') {
     query.populate('categoryId', 'name slug');

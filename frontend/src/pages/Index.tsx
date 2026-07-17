@@ -17,6 +17,7 @@ const Index = () => {
   const [displayedFeatured, setDisplayedFeatured] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const observerTarget = useRef<HTMLDivElement>(null);
   const ITEMS_PER_BATCH = 12; // Load 12 items at a time
 
@@ -58,38 +59,24 @@ const Index = () => {
   }, [loadMoreFeatured, featured]);
 
   useEffect(() => {
-    // Featured products — limit to 24 initially for faster load
-    loadWithCache<any[]>(
-      CACHE_KEYS.featuredProducts,
-      () => api.get<any[]>("/products?featured=true&limit=24"),
-      (data) => {
+    // Featured products — load directly without cache for faster first load
+    api.get<any[]>("/products?featured=true&limit=12")
+      .then((data) => {
         setFeatured(data);
-        // Initially display first batch
-        setDisplayedFeatured(data.slice(0, ITEMS_PER_BATCH));
-      }
-    );
+        setDisplayedFeatured(data.slice(0, 12));
+        setInitialLoading(false);
+      })
+      .catch(() => {
+        setFeatured([]);
+        setInitialLoading(false);
+      });
 
-    // Categories — load without images for faster initial load
-    loadWithCache<any[]>(
-      CACHE_KEYS.categories,
-      () => api.get<any[]>("/categories"),
-      (data) => {
+    // Categories — load directly without images
+    api.get<any[]>("/categories")
+      .then((data) => {
         setCats(data);
-        // Load category images in background (non-blocking)
-        setTimeout(() => {
-          Promise.all(
-            data.map(async (cat) => {
-              try {
-                const imgData = await api.get<any>(`/site-images/home_collection_${cat.slug}`);
-                return { ...cat, image_url: imgData.imageData || imgData.image_data || cat.image_url };
-              } catch {
-                return cat;
-              }
-            })
-          ).then(setCats);
-        }, 0);
-      }
-    );
+      })
+      .catch(() => setCats([]));
   }, []);
 
   return (
@@ -136,7 +123,22 @@ const Index = () => {
         </section>
 
         {/* Featured */}
-        {displayedFeatured.length > 0 && (
+        {initialLoading ? (
+          <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="aspect-[2/3] bg-muted rounded-xl mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : displayedFeatured.length > 0 ? (
           <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
@@ -156,7 +158,7 @@ const Index = () => {
               )}
             </div>
           </section>
-        )}
+        ) : null}
       </main>
       <Footer />
     </div>
