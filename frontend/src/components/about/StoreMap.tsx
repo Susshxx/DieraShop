@@ -10,7 +10,7 @@ interface Store {
 const stores: Store[] = [
   {
     name: "Diera Shop",
-    address: "Bricks Cafe Building",
+    address: "Diera Shop",
     phone: "+977 9818276861",
     hours: "Sunday-Friday: 10AM-8PM",
     lat: 27.6855447,
@@ -34,7 +34,7 @@ const StoreMap = () => {
       />
       
       {/* Overlay with store information */}
-      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-4 max-w-xs">
+      <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg p-4 max-w-xs">
         <h4 className="text-sm font-medium text-foreground mb-3">Our Location</h4>
         <div className="space-y-2">
           {stores.map((store, index) => (
