@@ -90,7 +90,9 @@ const Footer = () => {
                     Diera Shop
                   </a>
                   {" "}
-                  <span className="text-xs text-muted-foreground">(Get Directions)</span>
+                  <a href="https://www.google.com/maps/place/Diera+Shop/@27.6857461,85.3151812,17z/data=!3m1!4b1!4m6!3m5!1s0x39eb19298aade4ab:0xdc5d8b46291c4f7d!8m2!3d27.6857414!4d85.3177561!16s%2Fg%2F11zcy31k6n?entry=ttu&g_ep=EgoyMDI2MDcxNC4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    (Get Directions)
+                  </a>
                 </p>
               </div>
               <div>
