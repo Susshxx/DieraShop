@@ -59,24 +59,115 @@ const Index = () => {
   }, [loadMoreFeatured, featured]);
 
   useEffect(() => {
-    // Featured products — load directly without cache for faster first load
-    api.get<any[]>("/products?featured=true&limit=12")
-      .then((data) => {
-        setFeatured(data);
-        setDisplayedFeatured(data.slice(0, 12));
-        setInitialLoading(false);
-      })
-      .catch(() => {
-        setFeatured([]);
-        setInitialLoading(false);
-      });
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    const FEATURED_CACHE_KEY = 'diera-featured-products';
+    const FEATURED_TIMESTAMP_KEY = 'diera-featured-timestamp';
+    const CATEGORIES_CACHE_KEY = 'diera-categories';
+    const CATEGORIES_TIMESTAMP_KEY = 'diera-categories-timestamp';
 
-    // Categories — load directly without images
-    api.get<any[]>("/categories")
-      .then((data) => {
-        setCats(data);
-      })
-      .catch(() => setCats([]));
+    // Helper to check if cache is still valid
+    const isCacheValid = (timestampKey: string) => {
+      const timestamp = localStorage.getItem(timestampKey);
+      if (!timestamp) return false;
+      const age = Date.now() - parseInt(timestamp);
+      return age < CACHE_DURATION;
+    };
+
+    // Load featured products
+    const loadFeaturedProducts = () => {
+      const cachedData = localStorage.getItem(FEATURED_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(FEATURED_TIMESTAMP_KEY);
+
+      if (cachedData && isCacheValid(FEATURED_TIMESTAMP_KEY)) {
+        // Use cached data
+        try {
+          const data = JSON.parse(cachedData);
+          setFeatured(data);
+          setDisplayedFeatured(data.slice(0, 12));
+          setInitialLoading(false);
+          console.log('[cache] Using cached featured products (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
+          
+          // Refresh in background if cache is older than 2.5 minutes
+          const age = Date.now() - parseInt(cachedTimestamp!);
+          if (age > CACHE_DURATION / 2) {
+            console.log('[cache] Refreshing featured products in background');
+            fetchFeaturedProducts(true);
+          }
+          return;
+        } catch (e) {
+          console.error('[cache] Failed to parse cached featured products:', e);
+        }
+      }
+
+      // No valid cache, fetch from API
+      fetchFeaturedProducts(false);
+    };
+
+    const fetchFeaturedProducts = (isBackgroundRefresh: boolean) => {
+      api.get<any[]>("/products?featured=true&limit=12")
+        .then((data) => {
+          setFeatured(data);
+          setDisplayedFeatured(data.slice(0, 12));
+          if (!isBackgroundRefresh) setInitialLoading(false);
+          
+          // Save to cache
+          localStorage.setItem(FEATURED_CACHE_KEY, JSON.stringify(data));
+          localStorage.setItem(FEATURED_TIMESTAMP_KEY, Date.now().toString());
+          console.log('[cache] Featured products cached');
+        })
+        .catch(() => {
+          if (!isBackgroundRefresh) {
+            setFeatured([]);
+            setInitialLoading(false);
+          }
+        });
+    };
+
+    // Load categories
+    const loadCategories = () => {
+      const cachedData = localStorage.getItem(CATEGORIES_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(CATEGORIES_TIMESTAMP_KEY);
+
+      if (cachedData && isCacheValid(CATEGORIES_TIMESTAMP_KEY)) {
+        // Use cached data
+        try {
+          const data = JSON.parse(cachedData);
+          setCats(data);
+          console.log('[cache] Using cached categories (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
+          
+          // Refresh in background if cache is older than 2.5 minutes
+          const age = Date.now() - parseInt(cachedTimestamp!);
+          if (age > CACHE_DURATION / 2) {
+            console.log('[cache] Refreshing categories in background');
+            fetchCategories(true);
+          }
+          return;
+        } catch (e) {
+          console.error('[cache] Failed to parse cached categories:', e);
+        }
+      }
+
+      // No valid cache, fetch from API
+      fetchCategories(false);
+    };
+
+    const fetchCategories = (isBackgroundRefresh: boolean) => {
+      api.get<any[]>("/categories")
+        .then((data) => {
+          setCats(data);
+          
+          // Save to cache
+          localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(data));
+          localStorage.setItem(CATEGORIES_TIMESTAMP_KEY, Date.now().toString());
+          console.log('[cache] Categories cached');
+        })
+        .catch(() => {
+          if (!isBackgroundRefresh) setCats([]);
+        });
+    };
+
+    loadFeaturedProducts();
+    loadCategories();
   }, []);
 
   return (
