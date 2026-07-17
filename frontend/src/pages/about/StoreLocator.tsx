@@ -10,12 +10,12 @@ const StoreLocator = () => {
   const stores = [
     {
       name: "Diera Shop",
-      address: "Bricks Cafe Building",
+      address: "Diera Shop",
       phone: "+977 9818276861",
       hours: "Sunday-Friday: 10AM-7:30PM",
       services: ["Personal Shopping", "Custom Design","Quality Products"],
-      mapUrl: "https://www.google.com/maps/place/Bricks+Cafe/@27.6855494,85.3151237,17z/data=!4m14!1m7!3m6!1s0x39eb19b437538aad:0xce90329ca745c9f3!2sBricks+Cafe!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x!3m5!1s0x39eb19b437538aad:0xce90329ca745c9f3!8m2!3d27.6855447!4d85.3176986!16s%2Fg%2F1hc5m0c6x?entry=ttu&g_ep=EgoyMDI2MDcxMy4wIKXMDSoASAFQAw%3D%3D",
-      directionsUrl: "https://www.google.com/maps/dir/?api=1&destination=27.6855447,85.3176986&destination_place_id=ChIJrdU1R7sZbTkR88dKn_4xv2Q"
+      mapUrl: "https://www.google.com/maps/place/Diera+Shop/@27.6857461,85.3151812,17z/data=!3m1!4b1!4m6!3m5!1s0x39eb19298aade4ab:0xdc5d8b46291c4f7d!8m2!3d27.6857414!4d85.3177561!16s%2Fg%2F11zcy31k6n?entry=ttu&g_ep=EgoyMDI2MDcxNC4wIKXMDSoASAFQAw%3D%3D",
+      directionsUrl: "https://www.google.com/maps/place/Diera+Shop/@27.6857461,85.3151812,17z/data=!3m1!4b1!4m6!3m5!1s0x39eb19298aade4ab:0xdc5d8b46291c4f7d!8m2!3d27.6857414!4d85.3177561!16s%2Fg%2F11zcy31k6n?entry=ttu&g_ep=EgoyMDI2MDcxNC4wIKXMDSoASAFQAw%3D%3D"
     }];
 
   return (
