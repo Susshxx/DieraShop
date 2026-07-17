@@ -104,7 +104,7 @@ const Index = () => {
     };
 
     const fetchFeaturedProducts = (isBackgroundRefresh: boolean) => {
-      api.get<any[]>("/products?featured=true&limit=12")
+      api.get<any[]>("/products?featured=true")
         .then((data) => {
           setFeatured(data);
           setDisplayedFeatured(data.slice(0, 12));
