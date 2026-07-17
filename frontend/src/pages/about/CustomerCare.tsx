@@ -117,7 +117,7 @@ const CustomerCare = () => {
             </div>
             <div className="space-y-4">
               <h3 className="text-lg font-light text-foreground">Location</h3>
-              <p className="text-muted-foreground">Bricks Cafe Building</p>
+              <p className="text-muted-foreground">Diera Shop</p>
               <p className="text-sm text-muted-foreground">Visit us during business hours</p>
             </div>
             <div className="space-y-4">
