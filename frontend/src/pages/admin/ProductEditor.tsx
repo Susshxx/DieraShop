@@ -62,7 +62,7 @@ const ProductEditor = () => {
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       toast.error("Max 5 MB per image");
       return;
     }
