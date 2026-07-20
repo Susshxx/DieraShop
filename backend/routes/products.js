@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
   
   // Use lean() for faster queries and select only needed fields
   const query = Product.find(filter)
-    .select('name slug priceNPR originalPriceNPR discountPercent images colors sizes stock featured active createdAt categoryId')
+    .select('name slug priceNPR originalPriceNPR discountPercent images colors sizes stock variantStock colorImageMap featured active createdAt categoryId')
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean();

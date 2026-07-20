@@ -4,9 +4,10 @@ import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatNPR } from "@/hooks/useCart";
 import { toast } from "sonner";
-import { Trash2, Eye, ZoomIn, X } from "lucide-react";
+import { Trash2, Eye, ZoomIn, X, Ban } from "lucide-react";
 
 // Helper function to convert product name to slug
 const nameToSlug = (name: string) => {
@@ -49,6 +50,8 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLabel, setDeleteLabel] = useState<"delete" | "reject">("delete");
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>("");
   const [viewOrder, setViewOrder] = useState<any | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   
@@ -93,6 +96,32 @@ const AdminOrders = () => {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     }
   };
+
+  const cancelOrder = async () => {
+    if (!cancelId || !cancelReason) {
+      toast.error("Please select a cancellation reason");
+      return;
+    }
+    try {
+      await api.post(`/admin/orders/${cancelId}/cancel`, { reason: cancelReason });
+      toast.success("Order cancelled successfully");
+      setCancelId(null);
+      setCancelReason("");
+      setViewOrder(null);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Cancel failed");
+    }
+  };
+
+  const CANCELLATION_REASONS = [
+    "Item out of stock",
+    "Delay in delivery/receiving product",
+    "Customer request",
+    "Payment issue",
+    "Address verification failed",
+    "Other operational issues"
+  ];
 
   return (
     <div>
@@ -383,8 +412,40 @@ const AdminOrders = () => {
 
               {viewOrder.notes && (
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-2">Order Notes</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">Order Notes</h3>
+                    {!['cancelled', 'delivered', 'shipped'].includes(viewOrder.status) && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setCancelId(viewOrder.id);
+                          setViewOrder(null);
+                        }}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        Cancel Order
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{viewOrder.notes}</p>
+                </div>
+              )}
+              
+              {/* Show cancel button even if there are no notes */}
+              {!viewOrder.notes && !['cancelled', 'delivered', 'shipped'].includes(viewOrder.status) && (
+                <div className="border-t pt-4 flex justify-end">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setCancelId(viewOrder.id);
+                      setViewOrder(null);
+                    }}
+                  >
+                    <Ban className="w-4 h-4 mr-1" />
+                    Cancel Order
+                  </Button>
                 </div>
               )}
             </div>
@@ -413,6 +474,58 @@ const AdminOrders = () => {
               </a>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={!!cancelId} onOpenChange={(open) => { 
+        if (!open) { 
+          setCancelId(null); 
+          setCancelReason(""); 
+        } 
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-2">
+              Please select a reason for cancelling this order. The customer will be notified and any confirmed stock will be restored.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cancellation Reason</label>
+              <Select value={cancelReason} onValueChange={setCancelReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CANCELLATION_REASONS.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { 
+                setCancelId(null); 
+                setCancelReason(""); 
+              }}
+            >
+              Go Back
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={cancelOrder}
+              disabled={!cancelReason}
+            >
+              Cancel Order
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

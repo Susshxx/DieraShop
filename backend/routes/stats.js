@@ -15,10 +15,11 @@ router.get('/', verifyToken, requireAdmin, async (_req, res) => {
     User.countDocuments(),
     Question.countDocuments({ $or: [{ answer: '' }, { answer: { $exists: false } }] }),
     ChatConversation.countDocuments({ unreadAdmin: { $gt: 0 } }),
-    Order.find({ revenueRecorded: true }).select('totalNPR'),
+    Order.find({ revenueRecorded: true }).select('itemsTotal totalNPR'),
   ]);
 
-  const revenue = orders.reduce((s, o) => s + (o.totalNPR || 0), 0);
+  // Calculate revenue using itemsTotal (excludes shipping cost)
+  const revenue = orders.reduce((s, o) => s + (o.itemsTotal || o.totalNPR || 0), 0);
 
   res.json({
     products: productCount,

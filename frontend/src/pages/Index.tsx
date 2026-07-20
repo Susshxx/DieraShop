@@ -6,40 +6,142 @@ import { api } from "@/lib/api";
 import EditableImage from "@/components/admin/EditableImage";
 import ProductCard from "@/components/product/ProductCard";
 import heroDefault from "@/assets/hero-image.png";
-import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 import ProfileCompleteDialog from "@/components/user/ProfileCompleteDialog";
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 // No default category images - all loaded from database
 const categoryImages: Record<string, string> = {};
 
+
+const getProductPrice = (product: any): number => {
+  const raw = product?.priceNPR ?? product?.price_npr ?? product?.price ?? 0;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : 0;
+  const cleaned = String(raw).replace(/[^0-9.-]/g, "");
+  const parsed = parseFloat(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const Index = () => {
-  const [featured, setFeatured] = useState<any[]>([]);
+  const [featured, setFeatured] = useState<any[]>([]); // Raw unsorted data from API
+  const [sortedFeatured, setSortedFeatured] = useState<any[]>([]); // Sorted version
   const [displayedFeatured, setDisplayedFeatured] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [sortBy, setSortBy] = useState<string>("default");
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const ITEMS_PER_BATCH = 12; // Load 12 items at a time
 
+  // Keep a ref in sync with sortBy so the data-fetching effect (which only
+  // runs once, on mount) can always sort with the CURRENT sort option
+  // instead of the value it closed over at mount time.
+  const sortByRef = useRef(sortBy);
+  useEffect(() => {
+    sortByRef.current = sortBy;
+  }, [sortBy]);
+
+  // Guards the data-fetching effect below against React StrictMode's
+  // intentional double-invocation in development.
+  const hasLoadedDataRef = useRef(false);
+
+  const bannerMessages = [
+    { text: "Welcome to Diera Shop 💛", link: null },
+    { text: "Shop our latest collection 🛍️", link: "/category/new-in" }
+  ];
+
+  // Sort products based on selected option
+  const sortProducts = useCallback((products: any[], sortOption: string) => {
+    if (!products || products.length === 0) return [];
+
+    console.log('[sort] Sorting', products.length, 'products with option:', sortOption);
+    const sorted = [...products];
+
+    switch (sortOption) {
+      case "price-low-high":
+        return sorted.sort((a, b) => getProductPrice(a) - getProductPrice(b));
+
+      case "price-high-low":
+        return sorted.sort((a, b) => getProductPrice(b) - getProductPrice(a));
+
+      case "best-sellers":
+        return sorted.sort((a, b) => {
+          const getStockLevel = (product: any) => {
+            if (product.variantStock && typeof product.variantStock === 'object') {
+              return Object.values(product.variantStock).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
+            }
+            return product.stock || 0;
+          };
+
+          const stockA = getStockLevel(a);
+          const stockB = getStockLevel(b);
+          return stockA - stockB;
+        });
+
+      default:
+        console.log('[sort] Using default order (no sorting)');
+        return sorted;
+    }
+  }, []);
+
+  // Apply sorting when sortBy or featured changes
+  useEffect(() => {
+    console.log('[effect] Sort effect triggered - sortBy:', sortBy, 'featured count:', featured.length);
+    if (featured.length > 0) {
+      const sorted = sortProducts(featured, sortBy);
+      console.log('[effect] Sorted result sample (first 3):', sorted.slice(0, 3).map(p => ({
+        name: p.name,
+        price: getProductPrice(p)
+      })));
+      setSortedFeatured(sorted);
+      // Reset displayed products to show first batch of sorted results
+      setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
+      console.log('[effect] Updated sortedFeatured and displayedFeatured');
+    } else {
+      setSortedFeatured([]);
+      setDisplayedFeatured([]);
+    }
+  }, [sortBy, featured, sortProducts]);
+
+  // Auto-rotate banner every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % bannerMessages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const nextBanner = () => {
+    setCurrentBannerIndex((prev) => (prev + 1) % bannerMessages.length);
+  };
+
+  const prevBanner = () => {
+    setCurrentBannerIndex((prev) => (prev - 1 + bannerMessages.length) % bannerMessages.length);
+  };
+
   // Load more featured products when scrolling
   const loadMoreFeatured = useCallback(() => {
-    if (loadingMore || displayedFeatured.length >= featured.length) return;
-    
+    if (loadingMore || displayedFeatured.length >= sortedFeatured.length) return;
+
     setLoadingMore(true);
-    const nextBatch = featured.slice(displayedFeatured.length, displayedFeatured.length + ITEMS_PER_BATCH);
-    
+    const nextBatch = sortedFeatured.slice(displayedFeatured.length, displayedFeatured.length + ITEMS_PER_BATCH);
+
     // Simulate slight delay for smooth loading
     setTimeout(() => {
       setDisplayedFeatured(prev => [...prev, ...nextBatch]);
       setLoadingMore(false);
     }, 100);
-  }, [featured, displayedFeatured, loadingMore]);
+  }, [sortedFeatured, displayedFeatured, loadingMore]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && featured.length > 0) {
+        if (entries[0].isIntersecting && sortedFeatured.length > 0) {
           loadMoreFeatured();
         }
       },
@@ -56,9 +158,18 @@ const Index = () => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [loadMoreFeatured, featured]);
+  }, [loadMoreFeatured, sortedFeatured]);
 
   useEffect(() => {
+    // React 18 StrictMode intentionally double-invokes effects in
+    // development. Without this guard, that fires two concurrent
+    // /products?featured=true requests; if the second one fails (or is
+    // rate-limited) its .catch() calls setFeatured([]) and wipes out the
+    // good data the first request already rendered. This ref makes sure
+    // the fetch logic only actually runs once.
+    if (hasLoadedDataRef.current) return;
+    hasLoadedDataRef.current = true;
+
     const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
     const FEATURED_CACHE_KEY = 'diera-featured-products';
     const FEATURED_TIMESTAMP_KEY = 'diera-featured-timestamp';
@@ -83,10 +194,16 @@ const Index = () => {
         try {
           const data = JSON.parse(cachedData);
           setFeatured(data);
-          setDisplayedFeatured(data.slice(0, 12));
+          // Compute and show the sorted list immediately (using the
+          // current sort option via the ref) rather than waiting for the
+          // separate sortBy effect to run - guarantees products always
+          // appear right away instead of depending on effect timing.
+          const sorted = sortProducts(data, sortByRef.current);
+          setSortedFeatured(sorted);
+          setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
           setInitialLoading(false);
           console.log('[cache] Using cached featured products (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
-          
+
           // Refresh in background if cache is older than 2.5 minutes
           const age = Date.now() - parseInt(cachedTimestamp!);
           if (age > CACHE_DURATION / 2) {
@@ -107,9 +224,14 @@ const Index = () => {
       api.get<any[]>("/products?featured=true")
         .then((data) => {
           setFeatured(data);
-          setDisplayedFeatured(data.slice(0, 12));
+          // Sort with whatever option is currently active (via the ref,
+          // so a background refresh can't silently revert the user's
+          // chosen sort back to default order) and display right away.
+          const sorted = sortProducts(data, sortByRef.current);
+          setSortedFeatured(sorted);
+          setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
           if (!isBackgroundRefresh) setInitialLoading(false);
-          
+
           // Save to cache
           localStorage.setItem(FEATURED_CACHE_KEY, JSON.stringify(data));
           localStorage.setItem(FEATURED_TIMESTAMP_KEY, Date.now().toString());
@@ -117,7 +239,10 @@ const Index = () => {
         })
         .catch(() => {
           if (!isBackgroundRefresh) {
-            setFeatured([]);
+            // Defensive: only clear to empty if we don't already have
+            // data. A failed request should never blank out products
+            // that a previous successful request already rendered.
+            setFeatured((prev) => (prev.length > 0 ? prev : []));
             setInitialLoading(false);
           }
         });
@@ -134,7 +259,7 @@ const Index = () => {
           const data = JSON.parse(cachedData);
           setCats(data);
           console.log('[cache] Using cached categories (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
-          
+
           // Refresh in background if cache is older than 2.5 minutes
           const age = Date.now() - parseInt(cachedTimestamp!);
           if (age > CACHE_DURATION / 2) {
@@ -152,16 +277,22 @@ const Index = () => {
     };
 
     const fetchCategories = (isBackgroundRefresh: boolean) => {
+      console.log('[categories] Fetching categories from API...');
       api.get<any[]>("/categories")
         .then((data) => {
+          console.log('[categories] Received data:', data);
           setCats(data);
-          
+
           // Save to cache
           localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(data));
           localStorage.setItem(CATEGORIES_TIMESTAMP_KEY, Date.now().toString());
-          console.log('[cache] Categories cached');
+          console.log('[cache] Categories cached, count:', data.length);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('[fetch] Failed to fetch categories:', err);
+          // Clear bad cache on error
+          localStorage.removeItem(CATEGORIES_CACHE_KEY);
+          localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
           if (!isBackgroundRefresh) setCats([]);
         });
     };
@@ -175,21 +306,71 @@ const Index = () => {
       <ProfileCompleteDialog />
       <DieraHeader />
       <main className="flex-1">
-        {/* Hero */}
+        {/* Hero - Desktop only shows image, Mobile shows welcome banner carousel */}
         <section className="relative">
-          <EditableImage
-            slotKey="home_hero"
-            defaultSrc={heroDefault}
-            alt="Diera Shop hero"
-            className="block"
-            imgClassName="w-full h-[50vh] sm:h-[60vh] object-cover"
-          />
+          {/* Desktop Hero Image */}
+          <div className="hidden sm:block">
+            <EditableImage
+              slotKey="home_hero"
+              defaultSrc={heroDefault}
+              alt="Diera Shop hero"
+              className="block"
+              imgClassName="w-full h-[60vh] object-cover"
+            />
+          </div>
+
+          {/* Mobile Welcome Banner Carousel */}
+          <div className="sm:hidden bg-white border-b border-gray-200">
+            <div className="relative py-2 px-4">
+              <div className="flex items-center justify-between">
+                {/* Left Arrow */}
+                <button
+                  onClick={prevBanner}
+                  className="text-gray-600 hover:text-gray-900 transition-colors p-1"
+                  aria-label="Previous message"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                {/* Banner Message */}
+                <div className="flex-1 text-center overflow-hidden">
+                  <div className="transition-all duration-500 ease-in-out">
+                    {bannerMessages[currentBannerIndex].link ? (
+                      <Link
+                        to={bannerMessages[currentBannerIndex].link}
+                        className="text-lg text-gray-700 inline-block hover:text-gray-900 transition-colors cursor-pointer"
+                        style={{ fontFamily: "'Brush Script MT', cursive" }}
+                      >
+                        {bannerMessages[currentBannerIndex].text}
+                      </Link>
+                    ) : (
+                      <span
+                        className="text-lg text-gray-700 inline-block"
+                        style={{ fontFamily: "'Brush Script MT', cursive" }}
+                      >
+                        {bannerMessages[currentBannerIndex].text}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Arrow */}
+                <button
+                  onClick={nextBanner}
+                  className="text-gray-600 hover:text-gray-900 transition-colors p-1"
+                  aria-label="Next message"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Categories - Horizontal scrollable circular layout */}
         <section className="pt-6 pb-4 sm:pt-10 sm:pb-6 bg-background">
           <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6 text-primary">Shop by collection</h2>
-          
+
           {/* Horizontal scrollable circular icons for all screen sizes */}
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 sm:gap-6 pb-2 pt-2 px-4 sm:px-6 justify-start sm:justify-center min-w-min">
@@ -209,7 +390,7 @@ const Index = () => {
               ))}
             </div>
           </div>
-          
+
           {cats.length === 0 && <p className="text-center text-muted-foreground text-sm px-4">Add categories in the admin to get started.</p>}
         </section>
 
@@ -232,15 +413,29 @@ const Index = () => {
         ) : displayedFeatured.length > 0 ? (
           <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-xl sm:text-2xl mb-3 sm:mb-4 text-center text-primary">Featured Products</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-2xl sm:text-2xl text-center text-primary flex-1">
+                  Featured Products
+                </h2>
+
+                {/* Filter Icon Button */}
+                <button
+                  onClick={() => setFilterDialogOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-border hover:bg-accent transition-colors"
+                  aria-label="Filter products"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-5">
                 {displayedFeatured.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
-              
+
               {/* Loading indicator and observer target */}
-              {displayedFeatured.length < featured.length && (
+              {displayedFeatured.length < sortedFeatured.length && (
                 <div ref={observerTarget} className="flex justify-center mt-6">
                   <div className="animate-pulse text-muted-foreground text-sm">
                     Loading more products...
@@ -252,6 +447,38 @@ const Index = () => {
         ) : null}
       </main>
       <Footer />
+
+      {/* Filter Dialog */}
+      <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sort Products</DialogTitle>
+          </DialogHeader>
+          <RadioGroup value={sortBy} onValueChange={(value) => {
+            setSortBy(value);
+            setFilterDialogOpen(false);
+          }}>
+            <div className="space-y-3 py-4">
+              <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent p-2 rounded">
+                <RadioGroupItem value="default" id="default" />
+                <Label htmlFor="default" className="cursor-pointer flex-1">Default</Label>
+              </div>
+              <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent p-2 rounded">
+                <RadioGroupItem value="price-low-high" id="price-low-high" />
+                <Label htmlFor="price-low-high" className="cursor-pointer flex-1">Price: Low to High</Label>
+              </div>
+              <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent p-2 rounded">
+                <RadioGroupItem value="price-high-low" id="price-high-low" />
+                <Label htmlFor="price-high-low" className="cursor-pointer flex-1">Price: High to Low</Label>
+              </div>
+              <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent p-2 rounded">
+                <RadioGroupItem value="best-sellers" id="best-sellers" />
+                <Label htmlFor="best-sellers" className="cursor-pointer flex-1">Best Sellers</Label>
+              </div>
+            </div>
+          </RadioGroup>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

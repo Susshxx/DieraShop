@@ -86,6 +86,9 @@ router.post('/create', verifyToken, async (req, res) => {
 
     const status = paymentMethod === 'phonepay' ? 'awaiting_payment' : 'pending';
 
+    // Calculate items total (without shipping)
+    const itemsTotal = items.reduce((sum, i) => sum + (i.priceNPR || i.price_npr || i.price) * (i.qty || i.quantity), 0);
+
     const order = await Order.create({
       userId: req.user.id,
       items: items.map((i) => ({
@@ -103,6 +106,7 @@ router.post('/create', verifyToken, async (req, res) => {
       fullName,
       paymentMethod: paymentMethod || 'cod',
       paymentScreenshot: paymentScreenshot || undefined,
+      itemsTotal,
       totalNPR,
       notes: notes || '',
       status,
@@ -337,8 +341,8 @@ adminRouter.patch('/:id/status', verifyToken, requireAdmin, async (req, res) => 
   // Prepare update object
   const updateData = { status };
   
-  // If order is being marked as delivered and payment method is COD, record revenue
-  if (status === 'delivered' && currentOrder.paymentMethod === 'cod' && !currentOrder.revenueRecorded) {
+  // If order is being confirmed, record revenue
+  if (isNowConfirmed && !currentOrder.revenueRecorded) {
     updateData.paidAt = new Date();
     updateData.revenueRecorded = true;
   }
@@ -403,6 +407,98 @@ adminRouter.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error deleting order:', error);
     res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
+adminRouter.post('/:id/cancel', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    
+    // Don't allow cancelling already delivered or cancelled orders
+    if (['delivered', 'cancelled'].includes(order.status)) {
+      return res.status(400).json({ error: 'Cannot cancel order that has been delivered or already cancelled' });
+    }
+    
+    // If order was confirmed and revenue was recorded, we need to reverse it
+    const wasRevenueRecorded = order.revenueRecorded;
+    
+    // Restore stock if order was confirmed
+    if (['confirmed', 'shipped'].includes(order.status)) {
+      for (const item of order.items) {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          const size = item.size;
+          const color = item.color;
+          const qty = item.qty;
+          
+          // If product has size/color variants, restore variant stock
+          if ((size || color) && product.variantStock && product.variantStock.size > 0) {
+            const variantKey = [size, color].filter(Boolean).join('-');
+            const currentVariantStock = product.variantStock.get(variantKey) || 0;
+            const newVariantStock = currentVariantStock + qty;
+            
+            // Update variant stock
+            product.variantStock.set(variantKey, newVariantStock);
+            await product.save();
+          } else {
+            // No variants, restore general stock
+            await Product.findByIdAndUpdate(item.productId, { $inc: { stock: qty } });
+          }
+        }
+      }
+    }
+    
+    // Update order status to cancelled and reverse revenue if needed
+    const updateData = { 
+      status: 'cancelled',
+      cancellationReason: reason || 'Cancelled by admin'
+    };
+    
+    // If revenue was recorded, unrecord it
+    if (wasRevenueRecorded) {
+      updateData.revenueRecorded = false;
+    }
+    
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).populate('userId', 'email name');
+    
+    // Send notification to user
+    const notif = await Notification.create({
+      userId: order.userId,
+      type: 'order',
+      title: 'Order cancelled',
+      body: `Your order #${order._id.toString().slice(-8)} has been cancelled. Reason: ${reason || 'Cancelled by admin'}`,
+      link: '/account/orders',
+      orderId: order._id,
+    });
+    
+    const io = req.app.get('io');
+    emitNotification(io, order.userId.toString(), notif);
+    
+    // Send email notification
+    if (updatedOrder?.userId?.email) {
+      await sendEmail({
+        to: updatedOrder.userId.email,
+        subject: 'Diera Shop — Order Cancelled',
+        html: orderEmailHtml({ orderId: updatedOrder._id.toString(), total: updatedOrder.totalNPR, status: 'cancelled' }),
+        templateParams: {
+          order_id: updatedOrder._id.toString().slice(-8),
+          total_npr: String(updatedOrder.totalNPR),
+          order_status: 'Cancelled',
+        },
+      });
+    }
+    
+    res.json({ message: 'Order cancelled successfully', order: mapOrder(updatedOrder) });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ error: 'Failed to cancel order' });
   }
 });
 

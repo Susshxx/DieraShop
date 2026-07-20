@@ -116,10 +116,10 @@ const ProductCard = ({ product: p }: ProductCardProps) => {
         }
       }}
     >
-    <div className="rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-primary/50 transition-all duration-300">
+    <div className="rounded-lg overflow-hidden group-hover:ring-2 group-hover:ring-primary/50 transition-all duration-300">
       <div 
         ref={imageRef}
-        className="aspect-[2/3] bg-muted overflow-hidden relative cursor-pointer select-none"
+        className="aspect-[3/4] bg-muted overflow-hidden relative cursor-pointer select-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onMouseDown={handleMouseDown}
@@ -131,6 +131,13 @@ const ProductCard = ({ product: p }: ProductCardProps) => {
       >
         {isNewProduct(p.created_at || p.createdAt) && <NewBadge />}
         
+        {/* Discount Badge - light green background with black text */}
+        {(p.discountPercent || p.discount_percent) > 0 && (
+          <div className="absolute top-2 right-2 bg-green-200 text-black text-xs font-bold px-2 py-1 rounded-md z-10 shadow-md" style={{ fontFamily: "'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif", fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+            {p.discountPercent || p.discount_percent}% OFF
+          </div>
+        )}
+        
         {currentImage && p.images?.[currentImage.index] && (
           <img 
             src={p.images[currentImage.index]} 
@@ -139,96 +146,26 @@ const ProductCard = ({ product: p }: ProductCardProps) => {
             draggable={false}
           />
         )}
-
-        {/* Color dots - show on hover if multiple images/colors available */}
-        {availableImages.length > 1 && isHovered && (
-          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg">
-            {availableImages.map((img, idx) => (
-              <button
-                key={idx}
-                onClick={(e) => handleColorDotClick(e, idx)}
-                className={`w-3 h-3 rounded-full border-2 transition-all ${
-                  currentImageIndex === idx
-                    ? 'border-primary scale-110'
-                    : 'border-gray-300 hover:border-gray-500'
-                }`}
-                style={{
-                  backgroundColor: img.color || '#6b7280',
-                }}
-                title={img.color || `Variant ${idx + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
       
-      <div className="bg-muted/30 px-3 py-2.5 space-y-1.5">
-        {/* Color dots — clickable, switch product image */}
-        <div className="flex gap-1.5 items-center">
-          {p.colors && p.colors.slice(0, 4).map((color: string, idx: number) => {
-            // Find the availableImages index for this color
-            const imgIdx = availableImages.findIndex(img => img.color === color);
-            const targetIdx = imgIdx !== -1 ? imgIdx : 0;
-            const isActive = currentImageIndex === targetIdx && imgIdx !== -1;
-            return (
-              <button
-                key={idx}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (imgIdx !== -1) setCurrentImageIndex(imgIdx);
-                }}
-                title={color}
-                className={`w-4 h-4 rounded-full transition-all duration-200 flex-shrink-0 ${
-                  isActive
-                    ? 'ring-2 ring-offset-1 ring-primary scale-110'
-                    : 'hover:ring-2 hover:ring-offset-1 hover:ring-primary/60 hover:scale-105'
-                }`}
-                style={{
-                  backgroundColor: color,
-                  border: '1.5px solid rgba(0,0,0,0.18)',
-                  cursor: imgIdx !== -1 ? 'pointer' : 'default',
-                }}
-              />
-            );
-          })}
-          {p.colors && p.colors.length > 4 && (
-            <span className="text-xs text-muted-foreground">+{p.colors.length - 4}</span>
-          )}
-        </div>
-
-        {/* Product name */}
-        <p className="text-base font-semibold line-clamp-1 leading-tight">{p.name}</p>
-        
-        {/* Collection name - multiple fallback options */}
-        <p className="text-sm text-muted-foreground line-clamp-1">
-          {p.categoryId?.name || p.categories?.name || p.category?.name || 'Collection'}
+      <div className="bg-muted/30 px-2 py-2 space-y-1">
+        {/* Product name - Clean readable font */}
+        <p className="text-l sm:text-base font-medium line-clamp-1 leading-tight">
+          {p.name}
         </p>
         
-        {/* Price section */}
-        <div className="flex items-center justify-between pt-1">
-          {/* Left side - discount badge */}
-          <div>
-            {(p.discountPercent || p.discount_percent) > 0 && (
-              <div className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-md inline-flex items-center gap-0.5">
-                {p.discountPercent || p.discount_percent}% ↓
-              </div>
-            )}
-          </div>
-          
-          {/* Right side - prices */}
-          <div className="flex flex-col items-end">
-            {/* Show original price if there's a discount */}
-            {(p.originalPriceNPR || p.original_price_npr) && (p.originalPriceNPR || p.original_price_npr) > (p.priceNPR || p.price_npr || p.price) && (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatNPR(p.originalPriceNPR || p.original_price_npr)}
-              </span>
-            )}
-            {/* Current price */}
-            <span className="text-lg font-bold text-foreground">
-              {formatNPR(p.priceNPR || p.price_npr || p.price)}
+        {/* Price section - Tabular numbers for better readability */}
+        <div className="flex flex-col gap-0">
+          {/* Show original price if there's a discount */}
+          {(p.originalPriceNPR || p.original_price_npr) && (p.originalPriceNPR || p.original_price_npr) > (p.priceNPR || p.price_npr || p.price) && (
+            <span className="text-xs text-muted-foreground line-through tabular-nums" style={{ fontFamily: "'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif", fontVariantNumeric: 'tabular-nums' }}>
+              {formatNPR(p.originalPriceNPR || p.original_price_npr)}
             </span>
-          </div>
+          )}
+          {/* Current price - Bold and clear */}
+          <span className="text-base sm:text-lg font-semibold text-foreground tabular-nums" style={{ fontFamily: "'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif", fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+            {formatNPR(p.priceNPR || p.price_npr || p.price)}
+          </span>
         </div>
       </div>
     </div>

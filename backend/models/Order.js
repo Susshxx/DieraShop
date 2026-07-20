@@ -31,7 +31,9 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'awaiting_payment'],
       default: 'pending',
     },
-    totalNPR: { type: Number, required: true },
+    cancellationReason: { type: String }, // Reason for cancellation
+    itemsTotal: { type: Number, required: true }, // Subtotal without shipping
+    totalNPR: { type: Number, required: true }, // Total including shipping
     paidAt: { type: Date },
     revenueRecorded: { type: Boolean, default: false },
   },
