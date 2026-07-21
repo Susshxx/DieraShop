@@ -313,7 +313,7 @@ const Checkout = () => {
                 <Textarea
                   id="note"
                   rows={2}
-                  placeholder="eg: I was searching for this product for so long."
+                  placeholder="eg: Finally found the product I was looking for."
                   value={form.note}
                   onChange={set("note")}
                 />

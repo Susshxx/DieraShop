@@ -172,8 +172,8 @@ const Category = () => {
       <main className="flex-1 px-2 sm:px-3 py-3 max-w-[1600px] mx-auto w-full">
         <div className="flex flex-row items-center justify-between gap-2 mb-2">
           <div>
-            <h1 className="text-2xl sm:text-2xl capitalize italic mb-0.5">{cat?.name || category}</h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+            <h1 className="text-2xl sm:text-2xl capitalize mb-0.5">{cat?.name || category}</h1>
+            <p className="text-xs sm:text-xs text-muted-foreground">
               {loading ? 'Loading...' : `Showing ${displayedItems.length} of ${totalItems} items`}
             </p>
           </div>

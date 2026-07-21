@@ -63,7 +63,7 @@ const ProductEditor = () => {
 
     const file = files[0];
     if (file.size > 20 * 1024 * 1024) {
-      toast.error("Max 5 MB per image");
+      toast.error("Max 20 MB per image");
       return;
     }
 
@@ -84,7 +84,7 @@ const ProductEditor = () => {
 
   const upload = async () => {
     if (!file || isNew) return toast.error("Save the product first, then upload images");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5 MB");
+    if (file.size > 20 * 1024 * 1024) return toast.error("Max 20 MB");
     const fd = new FormData();
     fd.append("image", file);
     try {
@@ -468,8 +468,8 @@ const ProductEditor = () => {
             </div>
             <p className="text-xs text-muted-foreground">
               {isNew 
-                ? "Add images now (they'll be saved with the product). Max 5 MB per image." 
-                : "Select and upload images one at a time. Max 5 MB per image."}
+                ? "Add images now (they'll be saved with the product). Max 20 MB per image." 
+                : "Select and upload images one at a time. Max 20 MB per image."}
             </p>
           </div>
         </div>

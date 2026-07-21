@@ -30,6 +30,74 @@ const Ctx = createContext<CartCtx | undefined>(undefined);
 // Returns a storage key scoped to the user so carts don't bleed between accounts
 const cartKey = (userId?: string) => `diera-cart${userId ? `-${userId}` : ""}`;
 
+// Other re-fetchable caches (see Index.tsx) that are safe to evict to free
+// up localStorage space if the cart write runs out of quota. These just
+// get re-downloaded from the API on next load — no data loss.
+const EVICTABLE_CACHE_KEYS = [
+  "diera-featured-products",
+  "diera-featured-timestamp",
+  "diera-categories",
+  "diera-categories-timestamp",
+];
+
+const isQuotaExceededError = (err: unknown): boolean =>
+  err instanceof DOMException &&
+  (err.name === "QuotaExceededError" ||
+    // Older/Firefox naming
+    err.name === "NS_ERROR_DOM_QUOTA_REACHED");
+
+// Persists the cart to localStorage without ever throwing. Cart items can
+// carry a full base64 product image, which is large enough to blow past
+// localStorage's ~5-10MB quota once a few items are added — and an
+// uncaught QuotaExceededError here previously crashed the whole app,
+// since CartProvider wraps the entire component tree.
+const safeSetCart = (key: string, items: CartItem[]) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+    return;
+  } catch (err) {
+    if (!isQuotaExceededError(err)) {
+      console.warn("[cart] Failed to persist cart:", err);
+      return;
+    }
+  }
+
+  // Quota exceeded — first try freeing space by evicting other
+  // re-fetchable caches before giving up on anything cart-related.
+  console.warn("[cart] Storage quota exceeded, evicting other caches and retrying");
+  for (const k of EVICTABLE_CACHE_KEYS) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      // ignore - localStorage may be unavailable entirely
+    }
+  }
+
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+    return;
+  } catch (err) {
+    if (!isQuotaExceededError(err)) {
+      console.warn("[cart] Failed to persist cart after evicting caches:", err);
+      return;
+    }
+  }
+
+  // Still over quota — the cart's own data (its base64 product images) is
+  // too large by itself. Fall back to persisting a lightweight version
+  // without images so the cart survives a refresh; thumbnails will just
+  // reload blank until the product data is fetched again.
+  console.warn("[cart] Still over quota after evicting caches, persisting cart without images");
+  try {
+    const lightweight = items.map((i) => ({ ...i, image: "" }));
+    localStorage.setItem(key, JSON.stringify(lightweight));
+  } catch (err) {
+    // Give up on persistence entirely. The cart keeps working fine in
+    // memory for this session - it just won't survive a full page reload.
+    console.warn("[cart] Unable to persist cart at all, continuing in-memory only:", err);
+  }
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { role, user, loading: authLoading } = useAuth();
 
@@ -70,7 +138,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Persist items to the user-scoped key whenever items change
   useEffect(() => {
     if (authLoading || !user || role === "admin") return;
-    localStorage.setItem(cartKey(user.id), JSON.stringify(items));
+    safeSetCart(cartKey(user.id), items);
   }, [items, user, role, authLoading]);
 
   const keyOf = (id: string, size?: string, color?: string) =>
@@ -109,7 +177,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clear = () => {
     setItems([]);
-    if (user) localStorage.removeItem(cartKey(user.id));
+    if (user) {
+      try {
+        localStorage.removeItem(cartKey(user.id));
+      } catch {
+        // ignore - non-critical
+      }
+    }
   };
 
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);

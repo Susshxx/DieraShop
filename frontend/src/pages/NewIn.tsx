@@ -371,8 +371,8 @@ const NewIn = () => {
       <main className="flex-1 px-2 sm:px-3 py-3 max-w-[1600px] mx-auto w-full">
         <div className="flex flex-row items-center justify-between gap-2 mb-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-light italic mb-0.5">New In</h1>
-            <p className="text-[12px] sm:text-xs text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl font-light mb-0.5">New In</h1>
+            <p className="text-xs sm:text-xs text-muted-foreground">
               {loading ? 'Loading...' : `Showing ${displayedItems.length} of ${totalItems} items`}
             </p>
           </div>

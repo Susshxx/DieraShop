@@ -29,6 +29,7 @@ const Index = () => {
   const [sortedFeatured, setSortedFeatured] = useState<any[]>([]); // Sorted version
   const [displayedFeatured, setDisplayedFeatured] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
+  const [catsLoading, setCatsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -50,8 +51,8 @@ const Index = () => {
   const hasLoadedDataRef = useRef(false);
 
   const bannerMessages = [
-    { text: "Welcome to Diera Shop 💛", link: null },
-    { text: "Shop our latest collection 🛍️", link: "/category/new-in" }
+    { text: "Welcome to Diera Shop ❤️", link: null },
+    { text: "Shop our Latest Collection 🛍️", link: "/category/new-in" }
   ];
 
   // Sort products based on selected option
@@ -111,7 +112,7 @@ const Index = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBannerIndex((prev) => (prev + 1) % bannerMessages.length);
-    }, 5000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -161,12 +162,6 @@ const Index = () => {
   }, [loadMoreFeatured, sortedFeatured]);
 
   useEffect(() => {
-    // React 18 StrictMode intentionally double-invokes effects in
-    // development. Without this guard, that fires two concurrent
-    // /products?featured=true requests; if the second one fails (or is
-    // rate-limited) its .catch() calls setFeatured([]) and wipes out the
-    // good data the first request already rendered. This ref makes sure
-    // the fetch logic only actually runs once.
     if (hasLoadedDataRef.current) return;
     hasLoadedDataRef.current = true;
 
@@ -194,10 +189,6 @@ const Index = () => {
         try {
           const data = JSON.parse(cachedData);
           setFeatured(data);
-          // Compute and show the sorted list immediately (using the
-          // current sort option via the ref) rather than waiting for the
-          // separate sortBy effect to run - guarantees products always
-          // appear right away instead of depending on effect timing.
           const sorted = sortProducts(data, sortByRef.current);
           setSortedFeatured(sorted);
           setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
@@ -224,24 +215,27 @@ const Index = () => {
       api.get<any[]>("/products?featured=true")
         .then((data) => {
           setFeatured(data);
-          // Sort with whatever option is currently active (via the ref,
-          // so a background refresh can't silently revert the user's
-          // chosen sort back to default order) and display right away.
           const sorted = sortProducts(data, sortByRef.current);
           setSortedFeatured(sorted);
           setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
           if (!isBackgroundRefresh) setInitialLoading(false);
 
-          // Save to cache
-          localStorage.setItem(FEATURED_CACHE_KEY, JSON.stringify(data));
-          localStorage.setItem(FEATURED_TIMESTAMP_KEY, Date.now().toString());
-          console.log('[cache] Featured products cached');
+          try {
+            localStorage.setItem(FEATURED_CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(FEATURED_TIMESTAMP_KEY, Date.now().toString());
+            console.log('[cache] Featured products cached');
+          } catch (storageErr) {
+            console.warn('[cache] Failed to cache featured products (likely quota exceeded), continuing without cache:', storageErr);
+            try {
+              localStorage.removeItem(FEATURED_CACHE_KEY);
+              localStorage.removeItem(FEATURED_TIMESTAMP_KEY);
+            } catch {
+              // ignore - localStorage may be unavailable entirely
+            }
+          }
         })
         .catch(() => {
           if (!isBackgroundRefresh) {
-            // Defensive: only clear to empty if we don't already have
-            // data. A failed request should never blank out products
-            // that a previous successful request already rendered.
             setFeatured((prev) => (prev.length > 0 ? prev : []));
             setInitialLoading(false);
           }
@@ -257,16 +251,23 @@ const Index = () => {
         // Use cached data
         try {
           const data = JSON.parse(cachedData);
-          setCats(data);
-          console.log('[cache] Using cached categories (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
+          if (Array.isArray(data) && data.length > 0) {
+            setCats(data);
+            setCatsLoading(false);
+            console.log('[cache] Using cached categories (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
 
-          // Refresh in background if cache is older than 2.5 minutes
-          const age = Date.now() - parseInt(cachedTimestamp!);
-          if (age > CACHE_DURATION / 2) {
-            console.log('[cache] Refreshing categories in background');
-            fetchCategories(true);
+            // Refresh in background if cache is older than 2.5 minutes
+            const age = Date.now() - parseInt(cachedTimestamp!);
+            if (age > CACHE_DURATION / 2) {
+              console.log('[cache] Refreshing categories in background');
+              fetchCategories(true);
+            }
+            return;
+          } else {
+            console.log('[cache] Cached categories were empty, ignoring cache and re-fetching');
+            localStorage.removeItem(CATEGORIES_CACHE_KEY);
+            localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
           }
-          return;
         } catch (e) {
           console.error('[cache] Failed to parse cached categories:', e);
         }
@@ -282,18 +283,45 @@ const Index = () => {
         .then((data) => {
           console.log('[categories] Received data:', data);
           setCats(data);
+          setCatsLoading(false);
 
-          // Save to cache
-          localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(data));
-          localStorage.setItem(CATEGORIES_TIMESTAMP_KEY, Date.now().toString());
-          console.log('[cache] Categories cached, count:', data.length);
+          if (Array.isArray(data) && data.length > 0) {
+            try {
+              localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(data));
+              localStorage.setItem(CATEGORIES_TIMESTAMP_KEY, Date.now().toString());
+              console.log('[cache] Categories cached, count:', data.length);
+            } catch (storageErr) {
+              console.warn('[cache] Failed to cache categories (likely quota exceeded), continuing without cache:', storageErr);
+              try {
+                localStorage.removeItem(CATEGORIES_CACHE_KEY);
+                localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
+              } catch {
+                // ignore - localStorage may be unavailable entirely
+              }
+            }
+          } else {
+            try {
+              localStorage.removeItem(CATEGORIES_CACHE_KEY);
+              localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
+            } catch {
+              // ignore
+            }
+          }
         })
         .catch((err) => {
+          // A genuine fetch/network failure - this only fires if the
+          // API call itself rejected, never because of localStorage.
           console.error('[fetch] Failed to fetch categories:', err);
-          // Clear bad cache on error
-          localStorage.removeItem(CATEGORIES_CACHE_KEY);
-          localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
-          if (!isBackgroundRefresh) setCats([]);
+          try {
+            localStorage.removeItem(CATEGORIES_CACHE_KEY);
+            localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
+          } catch {
+            // ignore
+          }
+          if (!isBackgroundRefresh) {
+            setCats([]);
+            setCatsLoading(false);
+          }
         });
     };
 
@@ -338,15 +366,15 @@ const Index = () => {
                     {bannerMessages[currentBannerIndex].link ? (
                       <Link
                         to={bannerMessages[currentBannerIndex].link}
-                        className="text-lg text-gray-700 inline-block hover:text-gray-900 transition-colors cursor-pointer"
-                        style={{ fontFamily: "'Brush Script MT', cursive" }}
+                        className="text-s text-gray-700 inline-block hover:text-gray-900 transition-colors cursor-pointer underline underline-offset-4 decoration-1"
+                        // style={{ fontFamily: "'Brush Script MT', cursive" }}
                       >
                         {bannerMessages[currentBannerIndex].text}
                       </Link>
                     ) : (
                       <span
-                        className="text-lg text-gray-700 inline-block"
-                        style={{ fontFamily: "'Brush Script MT', cursive" }}
+                        className="text-s text-gray-700 inline-block"
+                        // style={{ fontFamily: "'Brush Script MT', cursive" }}
                       >
                         {bannerMessages[currentBannerIndex].text}
                       </span>
@@ -368,30 +396,44 @@ const Index = () => {
         </section>
 
         {/* Categories - Horizontal scrollable circular layout */}
-        <section className="pt-6 pb-4 sm:pt-10 sm:pb-6 bg-background">
-          <h2 className="text-xl sm:text-2xl mb-4 text-center px-4 sm:px-6 text-primary">Shop by collection</h2>
+        <section className="pt-4 pb-4 sm:pt-10 sm:pb-4 bg-background">
+          <h2 className="text-2xl sm:text-2xl mb-4 text-center px-4 sm:px-6 text-primary">Shop by Collection</h2>
 
-          {/* Horizontal scrollable circular icons for all screen sizes */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex gap-4 sm:gap-6 pb-2 pt-2 px-4 sm:px-6 justify-start sm:justify-center min-w-min">
-              {cats.map((c) => (
-                <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden rounded-full bg-muted mb-2 ring-2 ring-border group-hover:ring-primary transition-all shadow-md flex items-center justify-center cursor-pointer">
-                    <EditableImage
-                      slotKey={`home_collection_${c.slug}`}
-                      defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
-                      alt={c.name}
-                      className="block w-full h-full"
-                      imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+          {catsLoading ? (
+            // Skeleton outline while categories are loading - avoids
+            // flashing "Couldn't find Categories" before the fetch resolves.
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex gap-4 sm:gap-6 pb-2 pt-2 px-4 sm:px-6 justify-start sm:justify-center min-w-min">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex-shrink-0 animate-pulse">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-muted mb-2 ring-2 ring-border" />
+                    <div className="h-3 bg-muted rounded w-16 sm:w-20 mx-auto" />
                   </div>
-                  <p className="text-center text-sm sm:text-base font-medium line-clamp-2 leading-tight w-20 sm:w-24">{c.name}</p>
-                </Link>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {cats.length === 0 && <p className="text-center text-muted-foreground text-sm px-4">Add categories in the admin to get started.</p>}
+          ) : cats.length > 0 ? (
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex gap-4 sm:gap-6 pb-2 pt-2 px-4 sm:px-6 justify-start sm:justify-center min-w-min">
+                {cats.map((c) => (
+                  <Link key={c.slug} to={`/category/${c.slug}`} className="group block flex-shrink-0">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden rounded-full bg-muted mb-2 ring-2 ring-border group-hover:ring-primary transition-all shadow-md flex items-center justify-center cursor-pointer">
+                      <EditableImage
+                        slotKey={`home_collection_${c.slug}`}
+                        defaultSrc={c.image_url || categoryImages[c.slug] || heroDefault}
+                        alt={c.name}
+                        className="block w-full h-full"
+                        imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <p className="text-center text-m sm:text-base font-medium line-clamp-2 leading-tight w-20 sm:w-24">{c.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground text-sm px-4">Couldn't find Categories.</p>
+          )}
         </section>
 
         {/* Featured */}
@@ -452,7 +494,7 @@ const Index = () => {
       <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sort Products</DialogTitle>
+            <DialogTitle>Products Filter</DialogTitle>
           </DialogHeader>
           <RadioGroup value={sortBy} onValueChange={(value) => {
             setSortBy(value);
