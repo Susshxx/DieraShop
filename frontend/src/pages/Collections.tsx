@@ -12,6 +12,11 @@ const Collections = () => {
   const [productCounts, setProductCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
+  // Set page title
+  useEffect(() => {
+    document.title = "Collections - Diera Shop | Women's Fashion Categories";
+  }, []);
+
   const refreshCollections = useCallback(async () => {
     try {
       console.log('[collections] Refreshing collections...');

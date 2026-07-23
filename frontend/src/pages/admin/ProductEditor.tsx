@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { X, Upload, ImagePlus } from "lucide-react";
+import { X, Upload, ImagePlus, RotateCw } from "lucide-react";
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -30,6 +30,8 @@ const ProductEditor = () => {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [sizesInput, setSizesInput] = useState("");
   const [colorsInput, setColorsInput] = useState("");
+  const [imageRotations, setImageRotations] = useState<Record<number, number>>({});
+  const [imageFiles, setImageFiles] = useState<Record<number, File>>({});
 
   useEffect(() => {
     api.get<any[]>("/categories?admin=true").then(setCats).catch(() => {});
@@ -96,20 +98,118 @@ const ProductEditor = () => {
         fd.append("image", file);
         try {
           const res = await api.post<{ url: string }>("/upload", fd);
+          const newImageIndex = form.images.length;
           setForm({ ...form, images: [...form.images, res.url] });
           setPreviewImages([...previewImages, res.url]);
+          setImageRotations({ ...imageRotations, [newImageIndex]: 0 });
+          setImageFiles({ ...imageFiles, [newImageIndex]: file });
         } catch (err) {
           toast.error(`${file.name}: ${err instanceof Error ? err.message : "Upload failed"}`);
         }
       } else {
         setFile(file);
         const preview = URL.createObjectURL(file);
+        const newImageIndex = form.images.length;
         setPreviewImages([...previewImages, preview]);
         setForm({ ...form, images: [...form.images, preview] });
+        setImageRotations({ ...imageRotations, [newImageIndex]: 0 });
+        setImageFiles({ ...imageFiles, [newImageIndex]: file });
       }
     }
 
     e.target.value = "";
+  };
+
+  const rotateImage = async (index: number) => {
+    const originalFile = imageFiles[index];
+    const imageUrl = form.images[index];
+    const currentRotation = imageRotations[index] || 0;
+    
+    try {
+      toast.loading("Rotating image...");
+      
+      let fileToRotate: File;
+      
+      if (originalFile) {
+        // For new products: use the original file
+        fileToRotate = originalFile;
+      } else if (imageUrl) {
+        // For existing products: download from Cloudinary
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        fileToRotate = new File([blob], `rotated-image-${index}.jpg`, { type: blob.type });
+      } else {
+        toast.dismiss();
+        toast.error("No image available to rotate");
+        return;
+      }
+      
+      const newRotation = currentRotation + 90;
+      const rotatedFile = await rotateImageFile(fileToRotate, newRotation);
+      
+      // Upload rotated image to Cloudinary
+      const fd = new FormData();
+      fd.append("image", rotatedFile);
+      
+      const res = await api.post<{ url: string }>("/upload", fd);
+      
+      // Replace the image URL in form with the rotated version
+      const newImages = [...form.images];
+      newImages[index] = res.url;
+      
+      // Update the file reference to the rotated file
+      const newFiles = { ...imageFiles };
+      newFiles[index] = rotatedFile;
+      
+      setForm({ ...form, images: newImages });
+      setPreviewImages(newImages);
+      setImageFiles(newFiles);
+      setImageRotations({ ...imageRotations, [index]: 0 }); // Reset rotation since it's now permanent
+      
+      toast.dismiss();
+      toast.success("Image rotated and saved");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Failed to rotate image");
+      console.error("Rotation error:", err);
+    }
+  };
+
+  const rotateImageFile = async (file: File, degrees: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate new dimensions based on rotation
+        const radians = (degrees * Math.PI) / 180;
+        const sin = Math.abs(Math.sin(radians));
+        const cos = Math.abs(Math.cos(radians));
+        
+        canvas.width = img.width * cos + img.height * sin;
+        canvas.height = img.width * sin + img.height * cos;
+        
+        if (ctx) {
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(radians);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const rotatedFile = new File([blob], file.name, { type: file.type });
+              resolve(rotatedFile);
+            } else {
+              reject(new Error('Failed to create rotated image'));
+            }
+          }, file.type);
+        } else {
+          reject(new Error('Failed to get canvas context'));
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const upload = async () => {
@@ -130,6 +230,7 @@ const ProductEditor = () => {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
+
     const payload = {
       name: form.name,
       slug: form.slug || slugify(form.name),
@@ -138,7 +239,7 @@ const ProductEditor = () => {
       originalPriceNPR: form.originalPriceNPR ? Number(form.originalPriceNPR) : null,
       discountPercent: form.discountPercent ? Number(form.discountPercent) : 0,
       stock: Number(form.stock),
-      images: form.images || [],
+      images: form.images,
       sizes: form.sizes || [],
       colors: form.colors || [],
       colorImageMap: form.colorImageMap || {},
@@ -167,8 +268,32 @@ try {
   const removeImage = (index: number) => {
     const newImages = form.images.filter((_: any, i: number) => i !== index);
     const newPreviews = previewImages.filter((_, i) => i !== index);
+    const newRotations: Record<number, number> = {};
+    const newFiles: Record<number, File> = {};
+    
+    // Rebuild rotation and file maps with updated indices
+    Object.keys(imageRotations).forEach((key) => {
+      const numKey = parseInt(key);
+      if (numKey < index) {
+        newRotations[numKey] = imageRotations[numKey];
+      } else if (numKey > index) {
+        newRotations[numKey - 1] = imageRotations[numKey];
+      }
+    });
+    
+    Object.keys(imageFiles).forEach((key) => {
+      const numKey = parseInt(key);
+      if (numKey < index) {
+        newFiles[numKey] = imageFiles[numKey];
+      } else if (numKey > index) {
+        newFiles[numKey - 1] = imageFiles[numKey];
+      }
+    });
+    
     setForm({ ...form, images: newImages });
     setPreviewImages(newPreviews);
+    setImageRotations(newRotations);
+    setImageFiles(newFiles);
     toast.success("Image removed");
   };
 
@@ -480,7 +605,8 @@ try {
                 <div key={i} className="relative aspect-square group">
                   <img 
                     src={url} 
-                    className="w-full h-full object-cover rounded-lg border border-border" 
+                    className="w-full h-full object-cover rounded-lg border border-border transition-transform duration-200"
+                    style={{ transform: `rotate(${imageRotations[i] || 0}deg)` }}
                     alt={`Product image ${i + 1}`}
                     onError={(e) => {
                       // Fallback for broken images
@@ -490,10 +616,18 @@ try {
                   <button 
                     type="button" 
                     onClick={() => removeImage(i)} 
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:scale-110 transform duration-150"
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow-lg hover:scale-110 transform duration-150 z-10 md:opacity-0 md:group-hover:opacity-100 opacity-100"
                     title="Remove image"
                   >
                     <X className="w-3 h-3" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => rotateImage(i)}
+                    className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg hover:scale-110 transform duration-150 z-10 md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                    title="Rotate image"
+                  >
+                    <RotateCw className="w-3 h-3" />
                   </button>
                 </div>
               ))}

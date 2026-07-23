@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import PageHeader from "@/components/about/PageHeader";
@@ -7,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import AboutSidebar from "@/components/about/AboutSidebar";
 
 const StoreLocator = () => {
+  useEffect(() => {
+    document.title = "Store Locator - Diera Shop | Find Our Stores";
+  }, []);
   const stores = [
     {
       name: "Diera Shop",

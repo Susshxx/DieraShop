@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import PageHeader from "@/components/about/PageHeader";
@@ -6,6 +7,9 @@ import ImageTextBlock from "@/components/about/ImageTextBlock";
 import AboutSidebar from "@/components/about/AboutSidebar";
 
 const OurStory = () => {
+  useEffect(() => {
+    document.title = "Our Story - Diera Shop | About Us";
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <DieraHeader />

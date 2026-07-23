@@ -10,6 +10,7 @@ const EsewaFailure = () => {
   const nav = useNavigate();
 
   useEffect(() => {
+    document.title = "Payment Failed - Diera Shop | Payment Error";
     toast.error('Payment cancelled or failed');
   }, []);
 

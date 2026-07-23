@@ -28,6 +28,13 @@ const Category = () => {
   const [displayedItems, setDisplayedItems] = useState<any[]>([]); // Lazily-loaded subset actually rendered
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    if (category) {
+      document.title = `${category.charAt(0).toUpperCase() + category.slice(1)} - Diera Shop | Women's Fashion`;
+    }
+  }, [category]);
   const [sortBy, setSortBy] = useState<string>("default");
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);

@@ -13,6 +13,15 @@ const SearchResults = () => {
   const [params] = useSearchParams();
   const q = params.get("q") || "";
   const [results, setResults] = useState<any[]>([]);
+
+  // Set page title
+  useEffect(() => {
+    if (q) {
+      document.title = `Search: ${q} - Diera Shop | Women's Fashion`;
+    } else {
+      document.title = "Search - Diera Shop | Find Your Style";
+    }
+  }, [q]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

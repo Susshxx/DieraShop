@@ -38,6 +38,11 @@ const Index = () => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const ITEMS_PER_BATCH = 12; // Load 12 items at a time
 
+  // Set page title
+  useEffect(() => {
+    document.title = "Diera Shop - Premium Women's Fashion & Clothing Store in Nepal | Home";
+  }, []);
+
   // Keep a ref in sync with sortBy so the data-fetching effect (which only
   // runs once, on mount) can always sort with the CURRENT sort option
   // instead of the value it closed over at mount time.

@@ -10,6 +10,10 @@ const Notifications = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<any[]>([]);
 
+  useEffect(() => {
+    document.title = "Notifications - Diera Shop | Updates & Alerts";
+  }, []);
+
   const load = async () => {
     if (!user) return;
     const data = await api.get<any[]>("/notifications");

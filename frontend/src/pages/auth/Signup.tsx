@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,9 @@ const schema = z.object({
 });
 
 const Signup = () => {
+  useEffect(() => {
+    document.title = "Sign Up - Diera Shop | Create Account";
+  }, []);
   const nav = useNavigate();
   const { setAuth } = useAuth();
   const [form, setForm] = useState({ fullName: "", email: "", password: "" });

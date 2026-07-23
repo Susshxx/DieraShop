@@ -15,6 +15,10 @@ const EsewaSuccess = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
+    document.title = "Payment Successful - Diera Shop | Order Confirmed";
+  }, []);
+
+  useEffect(() => {
     const verifyPayment = async () => {
       try {
         const data = searchParams.get('data');

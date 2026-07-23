@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import PageHeader from "@/components/about/PageHeader";
@@ -10,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import AboutSidebar from "@/components/about/AboutSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Edit2, Plus, Trash2 } from "lucide-react";
@@ -30,6 +30,10 @@ const CustomerCare = () => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = "Customer Care - Diera Shop | Help & Support";
+  }, []);
   const [formData, setFormData] = useState({ question: "", answer: "", order: 0 });
 
   useEffect(() => {

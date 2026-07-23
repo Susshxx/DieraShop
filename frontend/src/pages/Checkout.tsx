@@ -69,6 +69,11 @@ const Checkout = () => {
   const { user } = useAuth();
   const nav = useNavigate();
 
+  // Set page title
+  useEffect(() => {
+    document.title = "Checkout - Diera Shop | Secure Payment & Delivery";
+  }, []);
+
   const [form, setForm] = useState({
     full_name: "",
     email: user?.email || "",

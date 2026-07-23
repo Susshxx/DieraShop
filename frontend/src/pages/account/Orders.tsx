@@ -27,6 +27,10 @@ const Orders = () => {
   const [reviewDialog, setReviewDialog] = useState<{ productId: string; orderId: string; productName: string; existingReview?: any } | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    document.title = "My Orders - Diera Shop | Order History";
+  }, []);
   const [images, setImages] = useState<File[]>([]);
   const [viewOrder, setViewOrder] = useState<any | null>(null);
   const [existingImages, setExistingImages] = useState<string[]>([]);

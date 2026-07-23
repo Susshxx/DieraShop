@@ -48,6 +48,24 @@ const ProductDetail = () => {
         const validColors = data?.colors?.filter((c: string) => c && c.trim()) || [];
         setSize(validSizes[0] || "");
         setSelectedColor(validColors[0] || "");
+        
+        // Update SEO metadata
+        document.title = `${data.name} | Diera Shop`;
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+          metaDescription.setAttribute('content', `${data.name} - ${data.description?.substring(0, 150) || 'Handpicked Nepali clothing from Diera Shop'} Shop now at NPR ${data.priceNPR}.`);
+        }
+        
+        // Update Open Graph tags
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        const ogDescription = document.querySelector('meta[property="og:description"]');
+        const ogImage = document.querySelector('meta[property="og:image"]');
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        
+        if (ogTitle) ogTitle.setAttribute('content', `${data.name} | Diera Shop`);
+        if (ogDescription) ogDescription.setAttribute('content', `${data.name} - ${data.description?.substring(0, 150) || 'Handpicked Nepali clothing from Diera Shop'}`);
+        if (ogImage && data.images?.[0]) ogImage.setAttribute('content', data.images[0]);
+        if (ogUrl) ogUrl.setAttribute('content', `https://dierashop.com/product/${data.slug}`);
       })
       .catch(() => setP(null));
   }, [productId]);

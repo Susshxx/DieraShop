@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { authApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
+  useEffect(() => {
+    document.title = "Login - Diera Shop | Sign In";
+  }, []);
   const nav = useNavigate();
   const loc = useLocation();
   const { user, loading, setAuth } = useAuth();

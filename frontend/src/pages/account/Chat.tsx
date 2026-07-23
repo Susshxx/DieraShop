@@ -13,6 +13,10 @@ const Chat = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.title = "Chat - Diera Shop | Customer Support";
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);

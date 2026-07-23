@@ -51,6 +51,10 @@ const Profile = () => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    document.title = "My Profile - Diera Shop | Account Settings";
+  }, []);
+
   const [profile, setProfile] = useState<ProfileData>({
     full_name: "",
     phone: "",

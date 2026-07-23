@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import PageHeader from "@/components/about/PageHeader";
@@ -5,6 +6,9 @@ import ContentSection from "@/components/about/ContentSection";
 import AboutSidebar from "@/components/about/AboutSidebar";
 
 const Sustainability = () => {
+  useEffect(() => {
+    document.title = "Sustainability - Diera Shop | Eco-Friendly Fashion";
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <DieraHeader />
