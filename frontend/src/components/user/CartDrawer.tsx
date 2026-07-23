@@ -87,21 +87,32 @@ const CartDrawer = () => {
                     {/* Remove */}
                     <button
                       onClick={() => remove(i.productId, i.size, i.color)}
-                      className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors z-10"
                     >
                       <X className="w-4 h-4" />
                     </button>
 
-                    {/* Image */}
-                    <div className="w-20 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                    {/* Image - Clickable */}
+                    <Link
+                      to={i.slug ? `/product/${i.slug}` : `/product/${i.productId}`}
+                      onClick={closeCart}
+                      className="w-20 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0"
+                    >
                       {i.image && (
                         <img src={i.image} alt={i.name} className="w-full h-full object-cover" />
                       )}
-                    </div>
+                    </Link>
 
                     {/* Details */}
                     <div className="flex-1 min-w-0 pr-5">
-                      <p className="font-semibold text-base leading-tight truncate">{i.name}</p>
+                      {/* Name - Clickable */}
+                      <Link
+                        to={i.slug ? `/product/${i.slug}` : `/product/${i.productId}`}
+                        onClick={closeCart}
+                        className="font-semibold text-base leading-tight truncate hover:text-primary transition-colors"
+                      >
+                        {i.name}
+                      </Link>
                       {i.color && (
                         <p className="text-sm text-muted-foreground mt-0.5">Color:{i.color}</p>
                       )}

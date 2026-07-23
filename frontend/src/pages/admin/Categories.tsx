@@ -18,22 +18,20 @@ const Categories = () => {
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   
-  const load = () => api.get<any[]>("/categories").then(setItems).catch(() => {});
+  const load = () => api.get<any[]>("/categories?admin=true").then(setItems).catch(() => {});
   useEffect(() => { load(); }, []);
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     try {
-      await api.post("/categories", { name: name.trim(), slug: slugify(name) });
+      const newCategory = await api.post("/categories", { name: name.trim(), slug: slugify(name) });
       setName("");
-      
-      // Invalidate cache
-      localStorage.removeItem('diera-categories');
-      localStorage.removeItem('diera-categories-timestamp');
-      
+// Immediately add to UI for instant feedback
+       setItems(prev => [...prev, newCategory]);
+       toast.success("Category added");
+       // Reload in background to sync with server
       load();
-      toast.success("Category added");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
     }
@@ -41,14 +39,25 @@ const Categories = () => {
   
   const del = async (id: string) => {
     if (!confirm("Delete category?")) return;
-    await api.delete(`/categories/${id}`);
-    
-    // Invalidate cache
-    localStorage.removeItem('diera-categories');
-    localStorage.removeItem('diera-categories-timestamp');
-    
-    load();
-    toast.success("Category deleted");
+    try {
+      console.log('[Categories] Deleting category with id:', id);
+      await api.delete(`/categories/${id}`);
+      console.log('[Categories] Delete successful, updating UI...');
+// Immediately remove from UI for instant feedback
+       setItems(prev => {
+         const filtered = prev.filter(item => item.id !== id);
+         console.log('[Categories] Items before:', prev.length, 'Items after:', filtered.length);
+         return filtered;
+       });
+       toast.success("Category deleted");
+       // Reload in background to sync with server
+      load();
+    } catch (err) {
+      console.error('[Categories] Delete failed:', err);
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+      // Reload to ensure UI is in sync with server state
+      load();
+    }
   };
   
   const openImageDialog = (category: any) => {
@@ -81,11 +90,20 @@ const Categories = () => {
     try {
       const fd = new FormData();
       fd.append("image", file);
-      await api.post(`/categories/${editingCategory.id}/image`, fd);
+      const result = await api.post<{ imageUrl: string }>(`/categories/${editingCategory.id}/image`, fd);
       toast.success("Image uploaded");
-      setEditingCategory(null);
-      setFile(null);
-      setPreviewUrl("");
+      
+// Immediately update UI with new image
+       setItems(prev => prev.map(item => 
+         item.id === editingCategory.id 
+           ? { ...item, imageUrl: result.imageUrl, image_url: result.imageUrl }
+           : item
+       ));
+       
+       setEditingCategory(null);
+       setFile(null);
+       setPreviewUrl("");
+       // Reload in background to sync with server
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -107,14 +125,20 @@ const Categories = () => {
         showInFooter: category.showInFooter ?? category.show_in_footer ?? true
       });
       
-      // Invalidate cache to force refresh on next page load
-      localStorage.removeItem('diera-categories');
-      localStorage.removeItem('diera-categories-timestamp');
-      
+// Immediately update UI for instant feedback
+       setItems(prev => prev.map(item => 
+         item.id === category.id 
+           ? { ...item, showInHeader: newValue, show_in_header: newValue }
+           : item
+       ));
+       
+       toast.success(newValue ? "Added to header" : "Removed from header");
+       // Reload in background to sync with server
       load();
-      toast.success(newValue ? "Added to header" : "Removed from header");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update");
+      // Reload to ensure UI is in sync with server state
+      load();
     }
   };
 
@@ -130,14 +154,20 @@ const Categories = () => {
         showInFooter: newValue
       });
       
-      // Invalidate cache to force refresh on next page load
-      localStorage.removeItem('diera-categories');
-      localStorage.removeItem('diera-categories-timestamp');
-      
+// Immediately update UI for instant feedback
+       setItems(prev => prev.map(item => 
+         item.id === category.id 
+           ? { ...item, showInFooter: newValue, show_in_footer: newValue }
+           : item
+       ));
+       
+       toast.success(newValue ? "Added to footer" : "Removed from footer");
+       // Reload in background to sync with server
       load();
-      toast.success(newValue ? "Added to footer" : "Removed from footer");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update");
+      // Reload to ensure UI is in sync with server state
+      load();
     }
   };
 

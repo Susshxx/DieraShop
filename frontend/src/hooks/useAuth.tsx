@@ -19,22 +19,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = useCallback(async () => {
-    if (!getToken()) {
-      setUser(null);
-      setRole(null);
-      return;
-    }
-    try {
-      const { user: u } = await authApi.me();
-      setUser(u);
-      setRole(u.role === "admin" ? "admin" : "user");
-    } catch {
-      clearToken();
-      setUser(null);
-      setRole(null);
-    }
-  }, []);
+const refreshUser = useCallback(async () => {
+      if (!getToken()) {
+        setUser(null);
+        setRole(null);
+        return;
+      }
+      try {
+        const { user: u } = await authApi.me();
+        setUser(u);
+        setRole(u.role === "admin" ? "admin" : "user");
+      } catch {
+        clearToken();
+        setUser(null);
+        setRole(null);
+      }
+    }, []);
 
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));

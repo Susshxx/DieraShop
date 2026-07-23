@@ -5,6 +5,10 @@ import Footer from "@/components/footer/Footer";
 import { api } from "@/lib/api";
 import { formatNPR } from "@/hooks/useCart";
 
+// Simple search cache with 2 minute TTL
+const searchCache = new Map<string, { data: any; timestamp: number }>();
+const SEARCH_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
 const SearchResults = () => {
   const [params] = useSearchParams();
   const q = params.get("q") || "";
@@ -12,10 +16,27 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!q) return setResults([]);
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    
+    // Check cache first
+    const cached = searchCache.get(q);
+    if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
+      setResults(cached.data.products || []);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     api.get<{ products: any[] }>(`/search?q=${encodeURIComponent(q)}`)
-      .then((data) => { setResults(data.products || []); setLoading(false); })
+      .then((data) => {
+        setResults(data.products || []);
+        // Cache the results
+        searchCache.set(q, { data, timestamp: Date.now() });
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [q]);
 

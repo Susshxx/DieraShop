@@ -76,7 +76,7 @@ const PaymentSettings = () => {
   };
 
   const uploadQRCode = async () => {
-    if (!selectedFile || !previewImage) {
+    if (!selectedFile) {
       toast.error("Please select an image");
       return;
     }
@@ -94,14 +94,17 @@ const PaymentSettings = () => {
     setUploading(true);
 
     try {
+      const uploadRes = await api.post<{ url: string; publicId?: string }>("/upload", fd);
+
       const timestamp = Date.now();
       const slotKey = `payment_qr_${timestamp}`;
-      
+
       await api.post("/admin/site-images", {
         slotKey,
         title: newQRTitle.trim(),
-        subtitle: newQRCategory.trim(), // Store category in subtitle
-        imageData: previewImage,
+        subtitle: newQRCategory.trim(),
+        imageData: uploadRes.url,
+        imagePublicId: uploadRes.publicId || '',
         sortOrder: qrCodes.length,
       });
 

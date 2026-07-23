@@ -9,6 +9,7 @@ const siteImageSchema = new mongoose.Schema(
     link: { type: String, default: '' },
     sortOrder: { type: Number, default: 0 },
     imageData: { type: String, default: null },
+    imagePublicId: { type: String, default: '' },
     imageMimeType: { type: String, default: '' },
     imageSize: { type: Number, default: 0 },
     uploadedAt: { type: Date },

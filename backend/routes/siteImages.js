@@ -2,7 +2,7 @@ import { Router } from 'express';
 import SiteImage from '../models/SiteImage.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 import { memoryUpload } from '../middleware/upload.js';
-import { processImageToWebp, bufferToDataUri } from '../utils/imageProcessor.js';
+import { uploadBufferToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { isPublicImageUrl } from '../utils/urlValidator.js';
 
 const router = Router();
@@ -44,8 +44,8 @@ adminRouter.get('/', verifyToken, requireAdmin, async (_req, res) => {
 // POST - Create new site image with image data
 adminRouter.post('/', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { slotKey, title, subtitle, alt, link, sortOrder, imageData } = req.body;
-    
+    const { slotKey, title, subtitle, alt, link, sortOrder, imageData, imagePublicId } = req.body;
+
     if (!slotKey || !imageData) {
       return res.status(400).json({ error: 'slotKey and imageData are required' });
     }
@@ -58,6 +58,7 @@ adminRouter.post('/', verifyToken, requireAdmin, async (req, res) => {
       link: link || '',
       sortOrder: sortOrder || 0,
       imageData,
+      imagePublicId: imagePublicId || '',
       imageMimeType: 'image/webp',
       uploadedAt: new Date(),
     });
@@ -101,12 +102,14 @@ adminRouter.put('/:id', verifyToken, requireAdmin, async (req, res) => {
 // DELETE - Delete site image by ID
 adminRouter.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const slot = await SiteImage.findByIdAndDelete(req.params.id);
-    
-    if (!slot) {
-      return res.status(404).json({ error: 'Site image not found' });
+    const slot = await SiteImage.findById(req.params.id);
+
+    if (slot?.imagePublicId) {
+      await deleteFromCloudinary(slot.imagePublicId);
     }
-    
+
+    await SiteImage.findByIdAndDelete(req.params.id);
+
     res.json({ message: 'Site image deleted successfully' });
   } catch (error) {
     console.error('Delete site image error:', error);
@@ -153,15 +156,20 @@ adminRouter.post('/:slotKey/image', verifyToken, requireAdmin, optionalUpload, a
     return res.status(400).json({ error: 'No image provided' });
   }
 
-  const webpBuffer = await processImageToWebp(buffer);
-  const base64 = bufferToDataUri(webpBuffer);
+  const slot = await SiteImage.findOne({ slotKey: req.params.slotKey });
+  if (slot?.imagePublicId) {
+    await deleteFromCloudinary(slot.imagePublicId);
+  }
 
-  const slot = await SiteImage.findOneAndUpdate(
+  const result = await uploadBufferToCloudinary(buffer, 'dierashop/site-images');
+
+  const updated = await SiteImage.findOneAndUpdate(
     { slotKey: req.params.slotKey },
     {
-      imageData: base64,
+      imageData: result.url,
+      imagePublicId: result.publicId,
       imageMimeType: 'image/webp',
-      imageSize: webpBuffer.byteLength,
+      imageSize: result.width * result.height * 3,
       uploadedAt: new Date(),
       sourceType,
       sourceUrl,
@@ -169,7 +177,7 @@ adminRouter.post('/:slotKey/image', verifyToken, requireAdmin, optionalUpload, a
     { upsert: true, new: true }
   );
 
-  res.json({ ok: true, slotKey: slot.slotKey, ...mapSlot(slot) });
+  res.json({ ok: true, slotKey: updated.slotKey, ...mapSlot(updated) });
 });
 
 adminRouter.post('/:slotKey/reset', verifyToken, requireAdmin, async (req, res) => {

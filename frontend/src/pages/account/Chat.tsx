@@ -15,6 +15,7 @@ const Chat = () => {
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -23,15 +24,59 @@ const Chat = () => {
       const msgs = await api.get<any[]>(`/chat/conversation/${conv.id}/messages`);
       setMessages(msgs || []);
     }).catch(() => {});
-  }, [user]);
+    
+    const socket = connectSocket();
+    socket.on('conversation:updated', (updatedConv: any) => {
+      if (convId === updatedConv.id) {
+        // Refresh messages if this is our conversation
+        api.get<any[]>(`/chat/conversation/${updatedConv.id}/messages`).then(setMessages).catch(() => {});
+      }
+    });
+    
+    return () => {
+      socket.off('conversation:updated');
+    };
+  }, [user, convId]);
 
   useEffect(() => {
     if (!convId) return;
+    
+    // Initial load
+    api.get<any[]>(`/chat/conversation/${convId}/messages`).then(setMessages).catch(() => {});
+    
+    // Set up WebSocket connection for real-time updates
     const socket = connectSocket();
     socket.emit("join_conversation", convId);
-    const handler = (msg: any) => setMessages((m) => [...m, msg]);
+    
+    const handler = (msg: any) => {
+      console.log('[chat] Received message via socket:', msg);
+      setMessages((m) => {
+        // Check if this message already exists (avoid duplicates from optimistic update)
+        const exists = m.some(existing => existing.id === msg.id || (existing.body === msg.body && existing.sender_id === msg.sender_id));
+        if (exists) {
+          console.log('[chat] Message already exists, skipping duplicate');
+          return m;
+        }
+        console.log('[chat] Adding new message to state');
+        return [...m, msg];
+      });
+    };
     socket.on("chat_messages", handler);
+    
+    // Polling fallback: always poll every 2 seconds to ensure messages are updated
+    // This ensures messages show even if WebSocket is not working
+    const pollInterval = setInterval(() => {
+      console.log('[chat] Polling messages from API');
+      api.get<any[]>(`/chat/conversation/${convId}/messages`).then((msgs) => {
+        console.log('[chat] Polled', msgs.length, 'messages');
+        setMessages(msgs);
+      }).catch((err) => {
+        console.error('[chat] Failed to poll messages:', err);
+      });
+    }, 2000);
+    
     return () => {
+      clearInterval(pollInterval);
       socket.off("chat_messages", handler);
       socket.emit("leave_conversation", convId);
     };
@@ -45,11 +90,37 @@ const Chat = () => {
     e.preventDefault();
     if (!text.trim() || !convId || !user) return;
     const body = text.trim();
+    console.log('[chat] Sending message:', body);
     setText("");
+    
+    // Optimistic update - add message immediately
+    const tempMsg = {
+      id: `temp-${Date.now()}`,
+      conversation_id: convId,
+      sender_id: user.id,
+      sender_role: 'user',
+      body,
+      text: body,
+      message_type: 'text',
+      messageType: 'text',
+      created_at: new Date().toISOString(),
+    };
+    console.log('[chat] Adding optimistic message to state:', tempMsg);
+    setMessages((m) => {
+      const newMessages = [...m, tempMsg];
+      console.log('[chat] Messages after optimistic update:', newMessages.length);
+      return newMessages;
+    });
+    
     try {
-      await api.post<any>(`/chat/conversation/${convId}/messages`, { body });
-      // Message will be added via socket event
-    } catch {
+      console.log('[chat] Sending message to API...');
+      const response = await api.post<any>(`/chat/conversation/${convId}/messages`, { body });
+      console.log('[chat] Message sent successfully, response:', response);
+      // The polling will pick up the confirmed message within 2 seconds
+    } catch (err) {
+      console.error('[chat] Failed to send message:', err);
+      // Remove temp message on error
+      setMessages((m) => m.filter((msg) => msg.id !== tempMsg.id));
       setText(body);
     }
   };
@@ -80,14 +151,27 @@ const Chat = () => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     
-    // Send each image separately
-    files.forEach((file) => {
-      if (file.type.startsWith('image/')) {
-        sendFile(file, 'image');
-      }
-    });
+    const file = files[0];
+    if (file.type.startsWith('image/')) {
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setImagePreview({ file, url });
+    }
     
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const sendPreviewedImage = async () => {
+    if (!imagePreview) return;
+    await sendFile(imagePreview.file, 'image');
+    setImagePreview(null);
+  };
+
+  const cancelImagePreview = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview.url);
+    }
+    setImagePreview(null);
   };
 
   const formatMessageTime = (timestamp: string) => {
@@ -174,6 +258,52 @@ const Chat = () => {
           ))}
           <div ref={endRef} />
         </div>
+        
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="border-t border-border p-3 bg-muted/50">
+            <div className="flex items-start gap-3">
+              <div className="relative">
+                <img 
+                  src={imagePreview.url} 
+                  alt="Preview" 
+                  className="w-24 h-24 object-cover rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={cancelImagePreview}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-destructive/90"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {imagePreview.file.name} ({(imagePreview.file.size / 1024).toFixed(1)} KB)
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button"
+                    size="sm"
+                    onClick={sendPreviewedImage}
+                    disabled={!convId}
+                  >
+                    Send
+                  </Button>
+                  <Button 
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={cancelImagePreview}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={send} className="border-t border-border p-2 flex gap-2">
           <input 
             ref={fileInputRef}

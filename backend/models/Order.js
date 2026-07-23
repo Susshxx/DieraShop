@@ -4,6 +4,7 @@ const orderItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
   productName: { type: String, required: true },
   productImage: { type: String },
+  productImagePublicId: { type: String },
   categoryName: { type: String },
   qty: { type: Number, required: true, min: 1 },
   size: { type: String },
@@ -20,7 +21,8 @@ const orderSchema = new mongoose.Schema(
     fullName: { type: String, required: true },
     notes: { type: String, default: '' },
     paymentMethod: { type: String, enum: ['cod', 'phonepay'], default: 'cod' },
-    paymentScreenshot: { type: String }, // Data URI for PhonePay payment screenshot
+    paymentScreenshot: { type: String },
+    paymentScreenshotPublicId: { type: String }, // Data URI for PhonePay payment screenshot
     paymentDetails: {
       transactionId: { type: String },
       method: { type: String },

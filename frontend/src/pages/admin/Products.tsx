@@ -11,21 +11,26 @@ const Products = () => {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   
   const load = async () => {
-    const data = await api.get<any[]>("/products?active=false&populate=category");
+    const data = await api.get<any[]>("/products?active=false&populate=category&admin=true");
     setItems(data || []);
   };
   useEffect(() => { load(); }, []);
 
-  const del = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    try {
-      await api.delete(`/products/${id}`);
-      toast.success("Deleted");
-      load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
-    }
-  };
+const del = async (id: string) => {
+     if (!confirm("Delete this product?")) return;
+     try {
+       await api.delete(`/products/${id}`);
+       // Immediately remove from UI for instant feedback
+       setItems(prev => prev.filter(item => item.id !== id));
+       toast.success("Deleted");
+       // Reload in background to sync with server
+       load();
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : "Delete failed");
+       // Reload to ensure UI is in sync with server state
+       load();
+     }
+   };
 
   const getTotalStock = (product: any) => {
     if (product.variantStock && Object.keys(product.variantStock).length > 0) {

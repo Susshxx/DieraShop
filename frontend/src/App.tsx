@@ -9,7 +9,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import ChatWidget from "@/components/user/ChatWidget";
-import { prefetchProducts } from "@/lib/productCache";
 
 import Index from "./pages/Index";
 import Category from "./pages/Category";
@@ -59,14 +58,6 @@ import AdminShippingSettings from "./pages/admin/ShippingSettings";
 
 const queryClient = new QueryClient();
 
-/** Fires once on mount to warm the product cache before any page navigation */
-function AppBootstrap() {
-  useEffect(() => {
-    prefetchProducts();
-  }, []);
-  return null;
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -75,7 +66,7 @@ const App = () => (
           <TooltipProvider>
             <Sonner />
             <BrowserRouter>
-              <AppBootstrap />
+              {/* <AppBootstrap /> */}
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />

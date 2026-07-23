@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { useAuth } from "./useAuth";
+import { api } from "../lib/api";
+import { connectSocket } from "../lib/socket";
 
 export interface CartItem {
   productId: string;
+  slug?: string;
   name: string;
   price: number;
   image: string;
@@ -118,7 +121,47 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const key = cartKey(user.id);
       try {
         const saved = JSON.parse(localStorage.getItem(key) || "[]");
-        setItems(Array.isArray(saved) ? saved : []);
+        const cartItems = Array.isArray(saved) ? saved : [];
+        
+        // Validate cart items - remove products that no longer exist and add missing slugs
+        const validateCartItems = async () => {
+          const validItems: CartItem[] = [];
+          const productIds = [...new Set(cartItems.map(item => item.productId))];
+          
+          try {
+            // Fetch all products to check which ones exist and get their slugs
+            const products = await api.get<any[]>("/products");
+            const existingProductIds = new Set(products.map(p => p.id));
+            const productSlugMap = new Map(products.map(p => [p.id, p.slug]));
+            
+            // Filter out cart items for non-existent products and add missing slugs
+            cartItems.forEach(item => {
+              if (existingProductIds.has(item.productId)) {
+                // Add slug if missing
+                const itemWithSlug = {
+                  ...item,
+                  slug: item.slug || productSlugMap.get(item.productId)
+                };
+                validItems.push(itemWithSlug);
+              } else {
+                console.log(`[cart] Removed non-existent product ${item.productId} from cart`);
+              }
+            });
+            
+            // Update cart with only valid items and slugs
+            if (validItems.length !== cartItems.length || JSON.stringify(validItems) !== JSON.stringify(cartItems)) {
+              setItems(validItems);
+            } else {
+              setItems(cartItems);
+            }
+          } catch (err) {
+            console.error('[cart] Failed to validate cart items:', err);
+            // If validation fails, keep the original cart items
+            setItems(cartItems);
+          }
+        };
+        
+        validateCartItems();
       } catch {
         setItems([]);
       }
@@ -140,6 +183,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (authLoading || !user || role === "admin") return;
     safeSetCart(cartKey(user.id), items);
   }, [items, user, role, authLoading]);
+
+  // Listen for product deletion events to remove deleted products from cart
+  useEffect(() => {
+    if (authLoading || !user || role === "admin") return;
+    
+    const socket = connectSocket();
+    
+    const handleProductDeleted = (data: any) => {
+      console.log('[cart] Product deleted event received:', data);
+      if (data && data.id) {
+        setItems((cur) => {
+          const filtered = cur.filter((c) => c.productId !== data.id);
+          if (filtered.length !== cur.length) {
+            console.log(`[cart] Removed deleted product ${data.id} from cart`);
+          }
+          return filtered;
+        });
+      }
+    };
+    
+    socket.on('product:deleted', handleProductDeleted);
+    
+    return () => {
+      socket.off('product:deleted', handleProductDeleted);
+    };
+  }, [user, role, authLoading]);
 
   const keyOf = (id: string, size?: string, color?: string) =>
     `${id}::${size ?? ""}::${color ?? ""}`;

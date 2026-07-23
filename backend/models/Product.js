@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema(
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
     stock: { type: Number, default: 0 }, // Overall stock (kept for backward compatibility)
     images: [{ type: String }],
+    imagePublicIds: [{ type: String }],
     sizes: [{ type: String }],
     colors: [{ type: String }],
     // New field: maps color to image index

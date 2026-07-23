@@ -212,7 +212,6 @@ import { SlidersHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 
 const ITEMS_PER_BATCH = 16;
 
@@ -327,11 +326,9 @@ const NewIn = () => {
     };
   }, [loadMoreItems, sortedItems]);
 
-  useEffect(() => {
-    loadWithCache<any[]>(
-      CACHE_KEYS.newIn,
-      () => api.get<any[]>("/products?limit=200&populate=category"),
-      (products) => {
+useEffect(() => {
+    api.get<any[]>("/products?limit=200&populate=category")
+      .then((products) => {
         // Filter products to only show those added in the last 7 days
         const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
         const newProducts = products.filter((product) => {
@@ -341,13 +338,12 @@ const NewIn = () => {
           return productDate >= sevenDaysAgo;
         });
 
-        // Sort by newest first - this is the "default" order
+        // Sort by newest first
         const sorted = [...newProducts].sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
           const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
           return dateB - dateA;
         });
-
         setAllItems(sorted);
 
         // Also compute and show the currently-selected sort's first batch
@@ -358,9 +354,12 @@ const NewIn = () => {
         setSortedItems(displaySorted);
         setDisplayedItems(displaySorted.slice(0, ITEMS_PER_BATCH));
 
-        setLoading(false); // hide spinner as soon as we have data (cached or fresh)
-      }
-    );
+        setLoading(false); // hide spinner as soon as we have data
+      })
+      .catch((err) => {
+        console.error('Failed to load new in products:', err);
+        setLoading(false);
+      });
   }, []);
 
   const totalItems = allItems.length;

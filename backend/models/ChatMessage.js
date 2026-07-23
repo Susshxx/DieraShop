@@ -8,6 +8,7 @@ const chatMessageSchema = new mongoose.Schema(
     text: { type: String, default: '', maxlength: 2000 },
     messageType: { type: String, enum: ['text', 'image', 'audio'], default: 'text' },
     fileData: { type: String }, // Base64 encoded file data
+    filePublicId: { type: String },
     fileName: { type: String },
     fileSize: { type: Number },
     mimeType: { type: String },

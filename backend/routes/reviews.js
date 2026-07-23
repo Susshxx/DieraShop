@@ -4,7 +4,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { verifyToken } from '../middleware/auth.js';
 import { memoryUpload } from '../middleware/upload.js';
-import { bufferToDataUri } from '../utils/imageProcessor.js';
+import { uploadBufferToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 
 const router = Router();
 
@@ -56,7 +56,7 @@ router.get('/user/:productId', verifyToken, async (req, res) => {
 router.put('/:id', verifyToken, memoryUpload.array('images', 5), async (req, res) => {
   try {
     const { rating, comment, existingImages } = req.body;
-    
+
     const review = await Review.findOne({
       _id: req.params.id,
       userId: req.user.id,
@@ -66,25 +66,40 @@ router.put('/:id', verifyToken, memoryUpload.array('images', 5), async (req, res
       return res.status(404).json({ error: 'Review not found' });
     }
 
-    // Process new images
-    const newImages = [];
+    const existingImagesArray = existingImages ? JSON.parse(existingImages) : [];
+    const newUploadedImages = [];
+    const newUploadedPublicIds = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         if (file.size > 5 * 1024 * 1024) {
           return res.status(400).json({ error: 'Image too large. Max 5MB per image.' });
         }
-        const dataUri = bufferToDataUri(file.buffer, file.mimetype);
-        newImages.push(dataUri);
+        const result = await uploadBufferToCloudinary(file.buffer, 'dierashop/reviews');
+        newUploadedImages.push(result.url);
+        newUploadedPublicIds.push(result.publicId);
       }
     }
 
-    // Combine existing images (if any) with new images
-    const existingImagesArray = existingImages ? JSON.parse(existingImages) : [];
-    const allImages = [...existingImagesArray, ...newImages].slice(0, 5);
+    const imagesToDelete = [...(review.images || []).filter(img => !existingImagesArray.includes(img))];
+    const publicIdsToDelete = imagesToDelete.map(img => {
+      const idx = review.images.indexOf(img);
+      return review.imagePublicIds && review.imagePublicIds[idx] ? review.imagePublicIds[idx] : null;
+    }).filter(Boolean);
+
+    if (publicIdsToDelete.length) {
+      await Promise.all(publicIdsToDelete.map(id => deleteFromCloudinary(id)));
+    }
+
+    const allImages = [...existingImagesArray, ...newUploadedImages].slice(0, 5);
+    const allPublicIds = [
+      ...(review.imagePublicIds || []).filter((_, idx) => existingImagesArray.includes(review.images[idx])),
+      ...newUploadedPublicIds
+    ].slice(0, 5);
 
     review.rating = parseInt(rating);
     review.comment = comment;
     review.images = allImages;
+    review.imagePublicIds = allPublicIds;
     await review.save();
 
     const populated = await Review.findById(review._id).populate('userId', 'name');
@@ -130,12 +145,11 @@ router.get('/can-review/:productId', verifyToken, async (req, res) => {
 router.post('/', verifyToken, memoryUpload.array('images', 5), async (req, res) => {
   try {
     const { productId, orderId, rating, comment } = req.body;
-    
+
     if (!productId || !orderId || !rating || !comment) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verify order exists, is delivered, and belongs to user
     const order = await Order.findOne({
       _id: orderId,
       userId: req.user.id,
@@ -147,7 +161,6 @@ router.post('/', verifyToken, memoryUpload.array('images', 5), async (req, res) 
       return res.status(403).json({ error: 'You can only review products from your delivered orders' });
     }
 
-    // Check if already reviewed
     const existing = await Review.findOne({
       userId: req.user.id,
       productId,
@@ -157,15 +170,16 @@ router.post('/', verifyToken, memoryUpload.array('images', 5), async (req, res) 
       return res.status(400).json({ error: 'You have already reviewed this product. Use the edit feature to update your review.' });
     }
 
-    // Process images
-    const images = [];
+    const uploadedImages = [];
+    const uploadedPublicIds = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         if (file.size > 5 * 1024 * 1024) {
           return res.status(400).json({ error: 'Image too large. Max 5MB per image.' });
         }
-        const dataUri = bufferToDataUri(file.buffer, file.mimetype);
-        images.push(dataUri);
+        const result = await uploadBufferToCloudinary(file.buffer, 'dierashop/reviews');
+        uploadedImages.push(result.url);
+        uploadedPublicIds.push(result.publicId);
       }
     }
 
@@ -175,7 +189,8 @@ router.post('/', verifyToken, memoryUpload.array('images', 5), async (req, res) 
       userId: req.user.id,
       rating: parseInt(rating),
       comment,
-      images,
+      images: uploadedImages,
+      imagePublicIds: uploadedPublicIds,
     });
 
     const populated = await Review.findById(review._id).populate('userId', 'name');

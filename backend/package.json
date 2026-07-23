@@ -8,10 +8,13 @@
     "start": "node index.js",
     "seed": "node scripts/seed.js",
     "cleanup": "node scripts/cleanupCollections.js",
-    "build:indexes": "node scripts/buildIndexes.js"
+    "build:indexes": "node scripts/buildIndexes.js",
+    "optimize": "node scripts/optimizeAtlas.js",
+    "migrate:cloudinary": "node scripts/migrateBase64ToCloudinary.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

@@ -2,7 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
-import { api } from "@/lib/api";
+import { api, wsUrl, getToken } from "@/lib/api";
+import { connectSocket } from "@/lib/socket";
 import EditableImage from "@/components/admin/EditableImage";
 import ProductCard from "@/components/product/ProductCard";
 import heroDefault from "@/assets/hero-image.png";
@@ -14,7 +15,6 @@ import { Label } from "@/components/ui/label";
 
 // No default category images - all loaded from database
 const categoryImages: Record<string, string> = {};
-
 
 const getProductPrice = (product: any): number => {
   const raw = product?.priceNPR ?? product?.price_npr ?? product?.price ?? 0;
@@ -161,173 +161,144 @@ const Index = () => {
     };
   }, [loadMoreFeatured, sortedFeatured]);
 
+  const refreshFeaturedProducts = useCallback(() => {
+    console.log('[featured] Refreshing featured products...');
+    api.get<any[]>("/products?featured=true").then((data) => {
+      console.log(`[featured] Refreshed ${data.length} products from API`);
+      console.log('[featured] Product IDs:', data.map(p => ({ id: p.id, name: p.name, hasImages: p.images?.length > 0, imageCount: p.images?.length || 0 })));
+      
+      // Don't filter by images - show all featured products even if they don't have images yet
+      setFeatured(data);
+      const sorted = sortProducts(data, sortByRef.current);
+      setSortedFeatured(sorted);
+      setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
+    }).catch((err) => {
+      console.error('Failed to refresh featured products:', err);
+    });
+  }, [sortProducts]);
+
+  const refreshCategories = useCallback(() => {
+    api.get<any[]>("/categories").then((data) => {
+      console.log(`[categories] Refreshed ${data.length} categories from API`);
+      setCats(data);
+    }).catch((err) => {
+      console.error('Failed to refresh categories:', err);
+    });
+  }, []);
+
   useEffect(() => {
     if (hasLoadedDataRef.current) return;
     hasLoadedDataRef.current = true;
 
-    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-    const FEATURED_CACHE_KEY = 'diera-featured-products';
-    const FEATURED_TIMESTAMP_KEY = 'diera-featured-timestamp';
-    const CATEGORIES_CACHE_KEY = 'diera-categories';
-    const CATEGORIES_TIMESTAMP_KEY = 'diera-categories-timestamp';
-
-    // Helper to check if cache is still valid
-    const isCacheValid = (timestampKey: string) => {
-      const timestamp = localStorage.getItem(timestampKey);
-      if (!timestamp) return false;
-      const age = Date.now() - parseInt(timestamp);
-      return age < CACHE_DURATION;
-    };
-
-    // Load featured products
-    const loadFeaturedProducts = () => {
-      const cachedData = localStorage.getItem(FEATURED_CACHE_KEY);
-      const cachedTimestamp = localStorage.getItem(FEATURED_TIMESTAMP_KEY);
-
-      if (cachedData && isCacheValid(FEATURED_TIMESTAMP_KEY)) {
-        // Use cached data
-        try {
-          const data = JSON.parse(cachedData);
-          setFeatured(data);
-          const sorted = sortProducts(data, sortByRef.current);
-          setSortedFeatured(sorted);
-          setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
-          setInitialLoading(false);
-          console.log('[cache] Using cached featured products (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
-
-          // Refresh in background if cache is older than 2.5 minutes
-          const age = Date.now() - parseInt(cachedTimestamp!);
-          if (age > CACHE_DURATION / 2) {
-            console.log('[cache] Refreshing featured products in background');
-            fetchFeaturedProducts(true);
-          }
-          return;
-        } catch (e) {
-          console.error('[cache] Failed to parse cached featured products:', e);
-        }
-      }
-
-      // No valid cache, fetch from API
-      fetchFeaturedProducts(false);
-    };
-
-    const fetchFeaturedProducts = (isBackgroundRefresh: boolean) => {
-      api.get<any[]>("/products?featured=true")
-        .then((data) => {
-          setFeatured(data);
-          const sorted = sortProducts(data, sortByRef.current);
-          setSortedFeatured(sorted);
-          setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
-          if (!isBackgroundRefresh) setInitialLoading(false);
-
-          try {
-            localStorage.setItem(FEATURED_CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem(FEATURED_TIMESTAMP_KEY, Date.now().toString());
-            console.log('[cache] Featured products cached');
-          } catch (storageErr) {
-            console.warn('[cache] Failed to cache featured products (likely quota exceeded), continuing without cache:', storageErr);
-            try {
-              localStorage.removeItem(FEATURED_CACHE_KEY);
-              localStorage.removeItem(FEATURED_TIMESTAMP_KEY);
-            } catch {
-              // ignore - localStorage may be unavailable entirely
-            }
-          }
-        })
-        .catch(() => {
-          if (!isBackgroundRefresh) {
-            setFeatured((prev) => (prev.length > 0 ? prev : []));
-            setInitialLoading(false);
-          }
-        });
-    };
-
-    // Load categories
-    const loadCategories = () => {
-      const cachedData = localStorage.getItem(CATEGORIES_CACHE_KEY);
-      const cachedTimestamp = localStorage.getItem(CATEGORIES_TIMESTAMP_KEY);
-
-      if (cachedData && isCacheValid(CATEGORIES_TIMESTAMP_KEY)) {
-        // Use cached data
-        try {
-          const data = JSON.parse(cachedData);
-          if (Array.isArray(data) && data.length > 0) {
-            setCats(data);
-            setCatsLoading(false);
-            console.log('[cache] Using cached categories (age: ' + Math.round((Date.now() - parseInt(cachedTimestamp!)) / 1000) + 's)');
-
-            // Refresh in background if cache is older than 2.5 minutes
-            const age = Date.now() - parseInt(cachedTimestamp!);
-            if (age > CACHE_DURATION / 2) {
-              console.log('[cache] Refreshing categories in background');
-              fetchCategories(true);
-            }
-            return;
-          } else {
-            console.log('[cache] Cached categories were empty, ignoring cache and re-fetching');
-            localStorage.removeItem(CATEGORIES_CACHE_KEY);
-            localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
-          }
-        } catch (e) {
-          console.error('[cache] Failed to parse cached categories:', e);
-        }
-      }
-
-      // No valid cache, fetch from API
-      fetchCategories(false);
-    };
-
-    const fetchCategories = (isBackgroundRefresh: boolean) => {
-      console.log('[categories] Fetching categories from API...');
+    // Load featured products and categories in parallel for faster rendering
+    Promise.all([
+      api.get<any[]>("/products?featured=true"),
       api.get<any[]>("/categories")
-        .then((data) => {
-          console.log('[categories] Received data:', data);
-          setCats(data);
-          setCatsLoading(false);
+    ]).then(([featuredData, categoriesData]) => {
+      console.log(`[featured] Loaded ${featuredData.length} products from API`);
+      console.log(`[categories] Loaded ${categoriesData.length} categories from API`);
+      
+      // Don't filter by images - show all featured products even if they don't have images yet
+      setFeatured(featuredData);
+      const sorted = sortProducts(featuredData, sortByRef.current);
+      setSortedFeatured(sorted);
+      setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
+      
+      setCats(categoriesData);
+      setInitialLoading(false);
+      setCatsLoading(false);
+    }).catch((err) => {
+      console.error('Failed to load initial data:', err);
+      setInitialLoading(false);
+      setCatsLoading(false);
+    });
 
-          if (Array.isArray(data) && data.length > 0) {
-            try {
-              localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(data));
-              localStorage.setItem(CATEGORIES_TIMESTAMP_KEY, Date.now().toString());
-              console.log('[cache] Categories cached, count:', data.length);
-            } catch (storageErr) {
-              console.warn('[cache] Failed to cache categories (likely quota exceeded), continuing without cache:', storageErr);
-              try {
-                localStorage.removeItem(CATEGORIES_CACHE_KEY);
-                localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
-              } catch {
-                // ignore - localStorage may be unavailable entirely
-              }
-            }
-          } else {
-            try {
-              localStorage.removeItem(CATEGORIES_CACHE_KEY);
-              localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
-            } catch {
-              // ignore
-            }
-          }
-        })
-        .catch((err) => {
-          // A genuine fetch/network failure - this only fires if the
-          // API call itself rejected, never because of localStorage.
-          console.error('[fetch] Failed to fetch categories:', err);
-          try {
-            localStorage.removeItem(CATEGORIES_CACHE_KEY);
-            localStorage.removeItem(CATEGORIES_TIMESTAMP_KEY);
-          } catch {
-            // ignore
-          }
-          if (!isBackgroundRefresh) {
-            setCats([]);
-            setCatsLoading(false);
-          }
-        });
+    // Set up WebSocket connection for real-time updates
+    const socket = connectSocket();
+
+    // Track if we received a socket message recently
+    let lastSocketMessage = Date.now();
+
+    socket.on('connect', () => {
+      console.log('[socket] Connected for real-time updates');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[socket] Connection error:', err);
+    });
+
+    socket.on('product:created', (data) => {
+      console.log('[socket] Product created event received:', data);
+      lastSocketMessage = Date.now();
+      // Optimistically add new product to state for instant feedback
+      if (data && data.id) {
+        setFeatured(prev => [...prev, data]);
+        const sorted = sortProducts([...featured, data], sortByRef.current);
+        setSortedFeatured(sorted);
+        setDisplayedFeatured(sorted.slice(0, ITEMS_PER_BATCH));
+      }
+      // Also refresh from API to ensure consistency
+      refreshFeaturedProducts();
+    });
+
+    socket.on('product:updated', (data) => {
+      console.log('[socket] Product updated event received:', data);
+      lastSocketMessage = Date.now();
+      refreshFeaturedProducts();
+    });
+
+    socket.on('product:deleted', (data) => {
+      console.log('[socket] Product deleted event received:', data);
+      lastSocketMessage = Date.now();
+      // Immediately remove from state for instant feedback
+      if (data && data.id) {
+        setFeatured(prev => prev.filter(p => p.id !== data.id));
+        setSortedFeatured(prev => prev.filter(p => p.id !== data.id));
+        setDisplayedFeatured(prev => prev.filter(p => p.id !== data.id));
+      }
+      // Also refresh from API to ensure consistency
+      refreshFeaturedProducts();
+    });
+
+    socket.on('category:created', () => {
+      console.log('[socket] Category created - refreshing categories');
+      refreshCategories();
+    });
+
+    socket.on('category:updated', () => {
+      console.log('[socket] Category updated - refreshing categories');
+      refreshCategories();
+    });
+
+    socket.on('category:deleted', () => {
+      console.log('[socket] Category deleted - refreshing categories');
+      refreshCategories();
+    });
+
+    socket.on('disconnect', () => {
+      console.log('[socket] Disconnected from real-time updates');
+    });
+
+    // Polling fallback: always poll every 2 seconds to ensure updates are caught quickly
+    // This ensures product updates appear even if WebSocket is not working or misses events
+    const pollInterval = setInterval(() => {
+      console.log('[featured] Polling from API to catch any missed updates');
+      refreshFeaturedProducts();
+    }, 2000);
+
+    return () => {
+      clearInterval(pollInterval);
+      socket.off('connect');
+      socket.off('connect_error');
+      socket.off('product:created');
+      socket.off('product:updated');
+      socket.off('product:deleted');
+      socket.off('category:created');
+      socket.off('category:updated');
+      socket.off('category:deleted');
+      socket.off('disconnect');
     };
-
-    loadFeaturedProducts();
-    loadCategories();
-  }, []);
+  }, [refreshFeaturedProducts, refreshCategories]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -367,15 +338,11 @@ const Index = () => {
                       <Link
                         to={bannerMessages[currentBannerIndex].link}
                         className="text-s text-gray-700 inline-block hover:text-gray-900 transition-colors cursor-pointer underline underline-offset-4 decoration-1"
-                        // style={{ fontFamily: "'Brush Script MT', cursive" }}
                       >
                         {bannerMessages[currentBannerIndex].text}
                       </Link>
                     ) : (
-                      <span
-                        className="text-s text-gray-700 inline-block"
-                        // style={{ fontFamily: "'Brush Script MT', cursive" }}
-                      >
+                      <span className="text-s text-gray-700 inline-block">
                         {bannerMessages[currentBannerIndex].text}
                       </span>
                     )}

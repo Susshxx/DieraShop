@@ -158,6 +158,7 @@ const ProductDetail = () => {
     try {
       add({ 
         productId: String(productId), 
+        slug: p.slug || p.slugify || undefined,
         name: p.name || 'Unnamed Product', 
         price, 
         image: productImage,

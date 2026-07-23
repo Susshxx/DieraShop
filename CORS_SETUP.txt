@@ -1,0 +1,158 @@
+═══════════════════════════════════════════════════════════════════
+  CORS CONFIGURATION - DieraShop
+═══════════════════════════════════════════════════════════════════
+
+✅ FIXED: CORS now allows both localhost and production
+
+ALLOWED ORIGINS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓ http://localhost:5173        (Frontend dev server)
+  ✓ http://localhost:5000        (Backend dev server)
+  ✓ https://dierashop.com        (Production)
+  ✓ https://www.dierashop.com    (Production www)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CONFIGURATION FILES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 backend/index.js
+   - Updated CORS middleware to allow all origins above
+   - Updated Socket.IO CORS configuration
+   - Added startup message showing allowed origins
+
+📁 frontend/.env
+   - Set to use localhost by default: VITE_API_URL=http://localhost:5000/api
+   - Commented out production URL
+   - Easy to switch between environments
+
+TESTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣  LOCAL DEVELOPMENT (default setup)
+   
+   Terminal 1 - Backend:
+   cd backend
+   npm start
+   
+   Terminal 2 - Frontend:
+   cd frontend
+   npm run dev
+   
+   ✅ Should see in backend console:
+   🌐 CORS ALLOWED ORIGINS:
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ✓ http://localhost:5173
+     ✓ http://localhost:5000
+     ✓ https://dierashop.com
+     ✓ https://www.dierashop.com
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   
+   Visit: http://localhost:5173
+   ✅ No CORS errors
+   ✅ Data loads properly
+
+2️⃣  TEST AGAINST PRODUCTION API (optional)
+   
+   Edit frontend/.env:
+   # VITE_API_URL=http://localhost:5000/api
+   VITE_API_URL=https://dierashop.com/api
+   
+   Restart frontend: npm run dev
+   Visit: http://localhost:5173
+   
+   ✅ Should work because localhost:5173 is in allowed origins
+   ✅ Can test with production data
+
+3️⃣  PRODUCTION
+   
+   Deploy as normal - both https://dierashop.com and 
+   https://www.dierashop.com are allowed
+
+TROUBLESHOOTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ Still getting CORS errors?
+
+1. Check backend is running:
+   curl http://localhost:5000/api/health
+   Should return: {"ok":true}
+
+2. Check backend console shows allowed origins on startup
+
+3. Hard refresh browser: Ctrl+Shift+R (or Cmd+Shift+R)
+
+4. Clear browser cache and localStorage:
+   - Open DevTools → Application → Storage
+   - Click "Clear site data"
+
+5. Check frontend .env has correct API URL:
+   - For local dev: VITE_API_URL=http://localhost:5000/api
+   - For production test: VITE_API_URL=https://dierashop.com/api
+
+6. Restart both backend and frontend
+
+7. Check browser console for actual error details
+
+❌ Search not working on mobile?
+
+1. Make sure backend is running
+2. Check Network tab in DevTools
+3. Verify API URL in frontend/.env
+4. Try hard refresh
+
+MOBILE SEARCH FIX:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Search overlay now has proper z-index
+   - Blur backdrop: z-[100]
+   - Search panel: z-[101]
+   - Header behind backdrop won't show through
+
+The mobile search issue was a styling problem, not CORS.
+The search panel now properly overlays everything.
+
+ENVIRONMENT SETUP:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Development (.env files are already configured):
+
+backend/.env:
+  FRONTEND_URL=http://localhost:5173
+  MONGODB_URI=mongodb+srv://... (your production DB)
+  PORT=5000
+
+frontend/.env:
+  VITE_API_URL=http://localhost:5000/api
+
+Production:
+  Backend should be deployed with FRONTEND_URL=https://dierashop.com
+  Frontend built with VITE_API_URL=https://dierashop.com/api
+
+SWITCHING BETWEEN ENVIRONMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Want to test locally against production data?
+Just start backend with production MongoDB connection.
+(It's already configured in your backend/.env)
+
+Want to test frontend against production API?
+Edit frontend/.env:
+  VITE_API_URL=https://dierashop.com/api
+
+Then restart: npm run dev
+
+SUMMARY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CORS supports: localhost:5173, localhost:5000, dierashop.com
+✅ Frontend .env set to localhost by default
+✅ Backend allows all necessary origins
+✅ Mobile search overlay fixed
+✅ No more CORS errors!
+
+Need help? Check:
+  1. Backend console for CORS origin list on startup
+  2. Browser console for error details
+  3. Network tab to see actual requests/responses
+
+═══════════════════════════════════════════════════════════════════

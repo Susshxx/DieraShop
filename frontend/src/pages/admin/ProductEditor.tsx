@@ -32,9 +32,9 @@ const ProductEditor = () => {
   const [colorsInput, setColorsInput] = useState("");
 
   useEffect(() => {
-    api.get<any[]>("/categories").then(setCats).catch(() => {});
+    api.get<any[]>("/categories?admin=true").then(setCats).catch(() => {});
     if (!isNew) {
-      api.get<any>(`/products/${id}`).then((data) => {
+      api.get<any>(`/products/${id}?admin=true`).then((data) => {
         // Extract category ID - could be in categoryId, category_id, or as an object
         let categoryId = null;
         if (data.categoryId) {
@@ -43,12 +43,28 @@ const ProductEditor = () => {
           categoryId = typeof data.category_id === 'object' ? data.category_id._id : data.category_id;
         }
         
+        // Clean up variantStock to only include current size-color combinations
+        const cleanedVariantStock: Record<string, number> = {};
+        if (data.sizes?.length > 0 && data.colors?.length > 0 && data.variantStock) {
+          data.sizes.forEach((size: string) => {
+            data.colors.forEach((color: string) => {
+              const variantKey = `${size}-${color}`;
+              // Only keep stock for valid current combinations
+              if (data.variantStock[variantKey] !== undefined) {
+                cleanedVariantStock[variantKey] = data.variantStock[variantKey];
+              } else {
+                cleanedVariantStock[variantKey] = 0;
+              }
+            });
+          });
+        }
+        
         const productData = {
           ...data,
           price: data.price_npr ?? data.price,
           category_id: categoryId,
           colorImageMap: data.colorImageMap || {},
-          variantStock: data.variantStock || {},
+          variantStock: cleanedVariantStock,
         };
         setForm(productData);
         setSizesInput((data.sizes || []).join(", "));
@@ -57,29 +73,43 @@ const ProductEditor = () => {
     }
   }, [id, isNew]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Max 20 MB per image");
+    // Process all selected files
+    const fileArray = Array.from(files);
+    const totalSize = fileArray.reduce((sum, f) => sum + f.size, 0);
+    if (totalSize > 20 * 1024 * 1024) {
+      toast.error("Total size exceeds 20 MB");
       return;
     }
 
-    setFile(file);
+    for (const file of fileArray) {
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error(`Max 20 MB per image. ${file.name} is too large.`);
+        continue;
+      }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const preview = reader.result as string;
       if (isNew) {
-        // For new products, add to preview array
+        const fd = new FormData();
+        fd.append("image", file);
+        try {
+          const res = await api.post<{ url: string }>("/upload", fd);
+          setForm({ ...form, images: [...form.images, res.url] });
+          setPreviewImages([...previewImages, res.url]);
+        } catch (err) {
+          toast.error(`${file.name}: ${err instanceof Error ? err.message : "Upload failed"}`);
+        }
+      } else {
+        setFile(file);
+        const preview = URL.createObjectURL(file);
         setPreviewImages([...previewImages, preview]);
         setForm({ ...form, images: [...form.images, preview] });
       }
-    };
-    reader.readAsDataURL(file);
+    }
+
+    e.target.value = "";
   };
 
   const upload = async () => {
@@ -117,21 +147,21 @@ const ProductEditor = () => {
       featured: form.featured,
       active: form.active,
     };
-    try {
-      if (isNew) {
-        const newProduct = await api.post<any>("/products", payload);
-        toast.success("Product created successfully!");
-        nav(`/admin/products/${newProduct.id}`);
-      } else {
-        await api.put(`/products/${id}`, payload);
-        toast.success("Product updated successfully!");
-        nav("/admin/products");
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setBusy(false);
-    }
+try {
+       if (isNew) {
+         const newProduct = await api.post<any>("/products", payload);
+         toast.success("Product created successfully!");
+         nav("/admin/products");
+       } else {
+         await api.put(`/products/${id}`, payload);
+         toast.success("Product updated successfully!");
+         nav("/admin/products");
+       }
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : "Save failed");
+     } finally {
+       setBusy(false);
+     }
   };
 
   const removeImage = (index: number) => {
@@ -148,7 +178,20 @@ const ProductEditor = () => {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    setForm({ ...form, sizes: sizesArray });
+    
+    // Clean up variantStock to remove entries with old sizes
+    const newVariantStock: Record<string, number> = {};
+    if (form.colors?.length > 0) {
+      sizesArray.forEach((size: string) => {
+        form.colors.forEach((color: string) => {
+          const variantKey = `${size}-${color}`;
+          // Keep existing stock value if it exists, otherwise set to 0
+          newVariantStock[variantKey] = form.variantStock?.[variantKey] ?? 0;
+        });
+      });
+    }
+    
+    setForm({ ...form, sizes: sizesArray, variantStock: newVariantStock });
   };
 
   const handleColorsChange = (value: string) => {
@@ -157,7 +200,20 @@ const ProductEditor = () => {
       .split(",")
       .map((c) => c.trim())
       .filter(Boolean);
-    setForm({ ...form, colors: colorsArray });
+    
+    // Clean up variantStock to remove entries with old colors
+    const newVariantStock: Record<string, number> = {};
+    if (form.sizes?.length > 0) {
+      form.sizes.forEach((size: string) => {
+        colorsArray.forEach((color: string) => {
+          const variantKey = `${size}-${color}`;
+          // Keep existing stock value if it exists, otherwise set to 0
+          newVariantStock[variantKey] = form.variantStock?.[variantKey] ?? 0;
+        });
+      });
+    }
+    
+    setForm({ ...form, colors: colorsArray, variantStock: newVariantStock });
   };
 
   const updateColorImageMapping = (color: string, imageIndex: number) => {
@@ -183,6 +239,7 @@ const ProductEditor = () => {
               type="number" 
               step="0.01" 
               value={form.price} 
+              onWheel={(e) => e.currentTarget.blur()} // Prevent mouse wheel from changing value
               onFocus={(e) => {
                 // Clear the 0 when user focuses to type
                 if (e.target.value === '0' || e.target.value === '0.00') {
@@ -210,6 +267,7 @@ const ProductEditor = () => {
               step="0.01" 
               value={form.originalPriceNPR || ''} 
               placeholder="Leave empty if no discount"
+              onWheel={(e) => e.currentTarget.blur()} // Prevent mouse wheel from changing value
               onChange={(e) => {
                 const val = e.target.value.trim();
                 const originalPrice = val === '' ? null : parseFloat(val);
@@ -245,6 +303,7 @@ const ProductEditor = () => {
               step="1"
               value={form.discountPercent || ''} 
               placeholder="0"
+              onWheel={(e) => e.currentTarget.blur()} // Prevent mouse wheel from changing value
               onChange={(e) => {
                 const val = e.target.value.trim();
                 const discountPercent = val === '' ? 0 : parseInt(val);
@@ -314,7 +373,7 @@ const ProductEditor = () => {
                   return (
                     <div key={color} className="flex items-center gap-2 text-sm">
                       <span className="font-medium min-w-[80px]">{color}:</span>
-                      <select
+<select
                         value={linkedImageIdx}
                         onChange={(e) => updateColorImageMapping(color, Number(e.target.value))}
                         className="flex-1 h-8 rounded border border-input bg-background px-2 text-xs"
@@ -363,6 +422,7 @@ const ProductEditor = () => {
                             type="number"
                             min="0"
                             value={currentStock}
+                            onWheel={(e) => e.currentTarget.blur()} // Prevent mouse wheel from changing value
                             onFocus={(e) => {
                               // Clear the 0 when user focuses to type
                               if (e.target.value === '0') {
@@ -446,6 +506,7 @@ const ProductEditor = () => {
               <Input 
                 type="file" 
                 accept="image/*" 
+                multiple
                 onChange={handleImageSelect}
                 id="image-upload"
                 className="hidden"

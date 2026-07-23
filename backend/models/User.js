@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     province: { type: String, default: '' },
     district: { type: String, default: '' },
     avatarUrl: { type: String, default: '' },
+    avatarPublicId: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
   },
   { timestamps: true }

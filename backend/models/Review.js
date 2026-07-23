@@ -7,7 +7,8 @@ const reviewSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true, maxlength: 1000 },
-    images: [{ type: String }], // Array of base64 image data
+    images: [{ type: String }], // Array of image URLs
+    imagePublicIds: [{ type: String }],
     verified: { type: Boolean, default: true }, // Verified purchase
   },
   { timestamps: true }

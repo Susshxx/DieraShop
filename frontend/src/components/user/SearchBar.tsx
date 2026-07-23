@@ -56,13 +56,23 @@ const SearchBar = () => {
       setCategories([]);
       return;
     }
+    // Only search after 3 characters are entered
+    if (q.trim().length < 3) {
+      console.log('[search] Query too short:', q.length, 'chars');
+      setResults([]);
+      setCategories([]);
+      return;
+    }
+    console.log('[search] Triggering search for:', q);
     const t = setTimeout(async () => {
       setLoading(true);
       try {
         const data = await api.get<SearchResponse>(`/search?q=${encodeURIComponent(q)}`);
+        console.log('[search] Results received:', data.products?.length, 'products');
         setResults(data.products || []);
         setCategories(data.categories || []);
-      } catch {
+      } catch (err) {
+        console.error('[search] Error:', err);
         setResults([]);
         setCategories([]);
       }
@@ -86,16 +96,21 @@ const SearchBar = () => {
 
       {open && (
         <>
-          {/* Full-screen blur + darken layer — covers everything behind search panel */}
+          {/* Blur backdrop - positioned below header (z-30) */}
           <div
-            className="fixed inset-0 z-[100]"
-            style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', backgroundColor: 'rgba(0,0,0,0.55)' }}
+            className="fixed inset-0 z-30"
+            style={{ 
+              backdropFilter: 'blur(12px)', 
+              WebkitBackdropFilter: 'blur(12px)', 
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              top: '64px' // Start below the header (header height is 4rem = 64px)
+            }}
             onClick={() => setOpen(false)}
           />
 
-          {/* Search panel — sits above the blur layer, fully sharp */}
-          <div className="fixed inset-x-0 top-0 z-[101] pointer-events-none">
-            <div className="max-w-2xl mx-auto mt-20 px-4 pointer-events-auto">
+          {/* Search panel - positioned below header but above backdrop */}
+          <div className="fixed inset-x-0 z-50 pointer-events-none" style={{ top: '64px' }}>
+            <div className="max-w-2xl mx-auto mt-4 px-4 pointer-events-auto">
               <form onSubmit={submit} className="flex items-center gap-2 bg-background border-b-2 border-primary pb-2 px-2 rounded-t-lg shadow-2xl">
                 <Search className="w-5 h-5 text-muted-foreground" />
                 <input

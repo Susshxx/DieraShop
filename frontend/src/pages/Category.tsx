@@ -3,12 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import DieraHeader from "@/components/header/DieraHeader";
 import Footer from "@/components/footer/Footer";
 import { api } from "@/lib/api";
+import { connectSocket } from "@/lib/socket";
 import ProductCard from "@/components/product/ProductCard";
 import { SlidersHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { loadWithCache, CACHE_KEYS } from "@/lib/productCache";
 
 const ITEMS_PER_BATCH = 16;
 
@@ -75,7 +75,9 @@ const Category = () => {
     if (allItems.length > 0) {
       const sorted = sortItems(allItems, sortBy);
       setSortedItems(sorted);
-      setDisplayedItems(sorted.slice(0, ITEMS_PER_BATCH));
+      // Show all items if total is less than batch size, otherwise show first batch
+      const displayCount = Math.min(sorted.length, ITEMS_PER_BATCH);
+      setDisplayedItems(sorted.slice(0, displayCount));
     } else {
       setSortedItems([]);
       setDisplayedItems([]);
@@ -120,6 +122,26 @@ const Category = () => {
     };
   }, [loadMoreItems, sortedItems]);
 
+  const refreshCategoryProducts = useCallback(async () => {
+    if (!category) return;
+    
+    console.log('[category] Refreshing category products for:', category);
+    try {
+      const catData = await api.get<any>(`/categories/slug/${category}`);
+      setCat(catData);
+      const products = await api.get<any[]>(`/products?categoryId=${catData.id}&populate=category`);
+      const items = products || [];
+      console.log('[category] Refreshed', items.length, 'products');
+      setAllItems(items);
+      const displaySorted = sortItems(items, sortByRef.current);
+      setSortedItems(displaySorted);
+      const displayCount = Math.min(displaySorted.length, ITEMS_PER_BATCH);
+      setDisplayedItems(displaySorted.slice(0, displayCount));
+    } catch (err) {
+      console.error('Failed to refresh category products:', err);
+    }
+  }, [category, sortItems]);
+
   useEffect(() => {
     if (!category) return;
 
@@ -132,37 +154,92 @@ const Category = () => {
     setSortedItems([]);
     setDisplayedItems([]);
 
-    // Fetch (or cache-hit) category meta
-    const catCacheKey = `diera-cat-meta-${category}`;
-    loadWithCache<any>(
-      catCacheKey,
-      () => api.get<any>(`/categories/slug/${category}`),
-      (catData) => setCat(catData)
-    );
-
-    // Fetch (or cache-hit) products for this category slug
-    loadWithCache<any[]>(
-      CACHE_KEYS.categoryProducts(category),
-      async () => {
-        const catData = await api.get<any>(`/categories/slug/${category}`);
+    // Fetch category by slug
+    api.get<any>(`/categories/slug/${category}`)
+      .then((catData) => {
+        setCat(catData);
+        // Fetch products for this category
         return api.get<any[]>(`/products?categoryId=${catData.id}&populate=category`);
-      },
-      (products) => {
+      })
+      .then((products) => {
         const items = products || [];
         setAllItems(items);
-
         // Also compute and show the currently-selected sort's first batch
         // right away, rather than waiting for the separate sort effect -
         // guarantees products always appear immediately instead of
         // depending on effect timing.
         const displaySorted = sortItems(items, sortByRef.current);
         setSortedItems(displaySorted);
-        setDisplayedItems(displaySorted.slice(0, ITEMS_PER_BATCH));
-
+        // Show all items if total is less than batch size, otherwise show first batch
+        const displayCount = Math.min(displaySorted.length, ITEMS_PER_BATCH);
+        setDisplayedItems(displaySorted.slice(0, displayCount));
         setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load category or products:', err);
+        setLoading(false);
+      });
+
+    // Set up WebSocket connection for real-time updates
+    const socket = connectSocket();
+
+    // Track if we received a socket message recently
+    let lastSocketMessage = Date.now();
+
+    socket.on('connect', () => {
+      console.log('[socket] Connected for real-time updates');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[socket] Connection error:', err);
+    });
+
+    socket.on('product:created', (data) => {
+      console.log('[socket] Product created event received:', data);
+      lastSocketMessage = Date.now();
+      refreshCategoryProducts();
+    });
+
+    socket.on('product:updated', (data) => {
+      console.log('[socket] Product updated event received:', data);
+      lastSocketMessage = Date.now();
+      refreshCategoryProducts();
+    });
+
+    socket.on('product:deleted', (data) => {
+      console.log('[socket] Product deleted event received:', data);
+      lastSocketMessage = Date.now();
+      // Immediately remove from state for instant feedback
+      if (data && data.id) {
+        setAllItems(prev => prev.filter(p => p.id !== data.id));
+        setSortedItems(prev => prev.filter(p => p.id !== data.id));
+        setDisplayedItems(prev => prev.filter(p => p.id !== data.id));
       }
-    );
-  }, [category, sortItems]);
+      // Also refresh from API to ensure consistency
+      refreshCategoryProducts();
+    });
+
+    socket.on('disconnect', () => {
+      console.log('[socket] Disconnected from real-time updates');
+    });
+
+    // Polling fallback: always poll every 2 seconds to ensure updates are caught quickly
+    // This ensures product updates appear even if WebSocket is not working or misses events
+    const pollInterval = setInterval(() => {
+      console.log('[category] Polling from API to catch any missed updates');
+      refreshCategoryProducts();
+    }, 2000);
+
+    return () => {
+      clearInterval(pollInterval);
+      socket.off('connect');
+      socket.off('connect_error');
+      socket.off('product:created');
+      socket.off('product:updated');
+      socket.off('product:deleted');
+      socket.off('disconnect');
+    };
+  }, [category, sortItems, refreshCategoryProducts]);
 
   const totalItems = allItems.length;
 

@@ -5,7 +5,7 @@ import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 import { memoryUpload } from '../middleware/upload.js';
-import { bufferToDataUri } from '../utils/imageProcessor.js';
+import { uploadBufferToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 
 const router = Router();
 const adminRouter = Router();
@@ -82,7 +82,7 @@ router.post('/conversation/:id/messages', verifyToken, memoryUpload.single('file
   try {
     const { body } = req.body;
     const file = req.file;
-    
+
     const conv = await ChatConversation.findById(req.params.id);
     if (!conv) return res.status(404).json({ error: 'Not found' });
 
@@ -92,7 +92,7 @@ router.post('/conversation/:id/messages', verifyToken, memoryUpload.single('file
     }
 
     const senderRole = isAdmin ? 'admin' : 'user';
-    
+
     let messageData = {
       conversationId: conv._id,
       senderId: req.user.id,
@@ -101,26 +101,24 @@ router.post('/conversation/:id/messages', verifyToken, memoryUpload.single('file
       messageType: 'text',
     };
 
-    // Handle file upload (images only)
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         return res.status(400).json({ error: 'File too large. Max 5MB.' });
       }
 
       const mimeType = file.mimetype;
-      
+
       if (!mimeType.startsWith('image/')) {
         return res.status(400).json({ error: 'Only image files are supported' });
       }
 
-      // Convert to base64 data URI
-      const dataUri = bufferToDataUri(file.buffer, mimeType);
+      const result = await uploadBufferToCloudinary(file.buffer, 'dierashop/chat');
 
       messageData = {
         ...messageData,
         messageType: 'image',
-        fileData: dataUri,
+        fileData: result.url,
+        filePublicId: result.publicId,
         fileName: file.originalname,
         fileSize: file.size,
         mimeType,
@@ -129,9 +127,8 @@ router.post('/conversation/:id/messages', verifyToken, memoryUpload.single('file
 
     const msg = await ChatMessage.create(messageData);
 
-    // Update conversation with last message preview
     const lastMessageText = messageData.messageType === 'text' ? body : '📷 Image';
-      
+
     conv.lastMessage = lastMessageText;
     conv.lastMessageAt = new Date();
     if (isAdmin) conv.unreadUser += 1;
@@ -141,10 +138,9 @@ router.post('/conversation/:id/messages', verifyToken, memoryUpload.single('file
     const io = req.app.get('io');
     if (io) {
       io.to(`conversation:${conv._id}`).emit('chat_messages', mapMsg(msg));
+      // Emit conversation update to refresh conversation lists
+      io.emit('conversation:updated', mapConv(conv));
     }
-
-    // Don't send any notifications for chat messages
-    // Users and admins should check the chat section directly
 
     res.status(201).json(mapMsg(msg));
   } catch (error) {

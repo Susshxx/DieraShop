@@ -2,7 +2,7 @@ import { Router } from 'express';
 import User from '../models/User.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 import { memoryUpload } from '../middleware/upload.js';
-import { processImageToWebp, bufferToDataUri } from '../utils/imageProcessor.js';
+import { uploadBufferToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 
 const router = Router();
 const adminRouter = Router();
@@ -45,14 +45,17 @@ router.patch('/profile', verifyToken, async (req, res) => {
 router.post('/profile/avatar', verifyToken, memoryUpload.single('avatar'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image provided' });
   try {
-    const webp = await processImageToWebp(req.file.buffer);
-    const dataUri = bufferToDataUri(webp);
-    const user = await User.findByIdAndUpdate(
+    const user = await User.findById(req.user.id);
+    if (user?.avatarPublicId) {
+      await deleteFromCloudinary(user.avatarPublicId);
+    }
+    const result = await uploadBufferToCloudinary(req.file.buffer, 'dierashop/avatars');
+    const updated = await User.findByIdAndUpdate(
       req.user.id,
-      { avatarUrl: dataUri },
+      { avatarUrl: result.url, avatarPublicId: result.publicId },
       { new: true }
     ).select('-passwordHash');
-    res.json({ avatar_url: user.avatarUrl });
+    res.json({ avatar_url: updated.avatarUrl });
   } catch {
     res.status(500).json({ error: 'Image processing failed' });
   }
